@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
   s.name         = 'EHObjectSyncManager'
   s.version      = '0.0.1'
-  s.summary      = ''
+  s.summary      = 'Leverages RestKit to observe managed object changes and automatically and transparently communicates them to a server.'
   s.homepage     = 'https://github.com/eric-horacek/EHObjectSyncManager'
   s.author       = { 'Eric Horacek' => 'horacek.eric@gmail.com' }
   s.license      = 'MIT'
