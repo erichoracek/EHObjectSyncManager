@@ -1,0 +1,21 @@
+//
+// Prefix header for all source files of the 'EHObjectSyncManager Example' target in the 'EHObjectSyncManager Example' project
+//
+
+#import <Availability.h>
+
+#ifndef __IPHONE_3_0
+#warning "This project uses features only available in iOS SDK 3.0 and later."
+#endif
+
+#ifdef __OBJC__
+    #import <UIKit/UIKit.h>
+    #import <Foundation/Foundation.h>
+    // Pods
+    #import <RestKit/RestKit.h>
+    #import <MSTableKit/MSTableKit.h>
+    #import <FormatterKit/TTTTimeIntervalFormatter.h>
+    #import <PonyDebugger/PonyDebugger.h>
+    #import <A2DynamicDelegate/A2DynamicDelegate.h>
+    #import <UIColor-Utilities/UIColor+Expanded.h>
+#endif
