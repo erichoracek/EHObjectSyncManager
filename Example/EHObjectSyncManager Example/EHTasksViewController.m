@@ -64,6 +64,7 @@ NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
     [self.collectionView registerClass:MSSubtitleDetailPlainTableViewCell.class forCellWithReuseIdentifier:EHTaskCellReuseIdentifier];
     
     self.navigationItem.title = @"Tasks";
+    self.navigationController.navigationBar.tintColor = [UIColor blackColor];
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(new)];
     
     [self loadData];

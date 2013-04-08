@@ -41,7 +41,8 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 {
     [super viewDidLoad];
     
-    self.navigationItem.title = @"Task";
+    self.navigationItem.title = (self.task.isInserted ? @"New Task" : @"Edit Task");
+    self.navigationController.navigationBar.tintColor = [UIColor blackColor];
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Cancel" style:UIBarButtonItemStylePlain target:self action:@selector(cancelObject)];
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Save" style:UIBarButtonItemStylePlain target:self action:@selector(saveObject)];
     
