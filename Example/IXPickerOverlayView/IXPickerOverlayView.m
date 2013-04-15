@@ -1,0 +1,199 @@
+//Created by Leonty Deriglazov & Vadim Yelagin
+//Copyright (C) 2012 Inexika, http://www.inexika.com
+//
+//Permission is hereby granted, free of charge, to any person obtaining a copy of this
+//software and associated documentation files (the "Software"), to deal in the Software
+//without restriction, including without limitation the rights to use, copy, modify, merge,
+//publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons
+//to whom the Software is furnished to do so, subject to the following conditions:
+//
+//The above copyright notice and this permission notice shall be included in all copies or
+//substantial portions of the Software.
+//
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+//INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+//PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+//FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+//OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+//DEALINGS IN THE SOFTWARE.
+
+#import "IXPickerOverlayView.h"
+#import <QuartzCore/QuartzCore.h>
+
+@interface IXPickerOverlayView ()
+
+@property (strong, nonatomic) CAShapeLayer* textureLayer;
+
+- (UIImage *)imageForLeftPane;
+- (UIImage *)imageForRightPane;
+- (UIImage *)imageForSectionWheel;
+- (UIImage *)imageForSectionsSeparator;
+- (UIImage *)imageForGlass;
+
+@end
+
+@implementation IXPickerOverlayView
+
+@synthesize textureLayer;
+
+- (id)init
+{
+    self = [super init];
+    if (self) {
+        self.userInteractionEnabled = NO;
+        self.layer.shouldRasterize = YES;
+        self.layer.rasterizationScale = [[UIScreen mainScreen] scale];
+    }
+    return self;
+}
+
+- (UIImage *)imageForLeftPane
+{
+    return [UIImage imageNamed:@"ixPickerOverlayLeftPane"];
+}
+
+- (UIImage *)imageForRightPane
+{
+    return [UIImage imageNamed:@"ixPickerOverlayRightPane"];
+}
+
+- (UIImage *)imageForSectionWheel
+{
+    return [UIImage imageNamed:@"ixPickerOverlaySectionWheel"];
+}
+
+- (UIImage *)imageForSectionsSeparator
+{
+    return [UIImage imageNamed:@"ixPickerOverlaySectionsSeparator"];
+}
+
+- (UIImage *)imageForGlass
+{
+    return [UIImage imageNamed:@"ixPickerOverlayGlass"];
+}
+
+- (CAShapeLayer*)textureLayer
+{
+    if (textureLayer == nil) {
+        textureLayer = [[CAShapeLayer alloc] init];
+        textureLayer.fillRule = kCAFillRuleEvenOdd;
+        textureLayer.fillColor = [[UIColor blackColor] CGColor];
+        textureLayer.transform = CATransform3DMakeScale(1, -1, 1);
+        [self.layer addSublayer:textureLayer];
+    }
+    return textureLayer;
+}
+
+- (void)layoutSubviews
+{
+    for (UIView * subview in self.subviews)
+    {
+        [subview removeFromSuperview];
+    }
+    
+    UIPickerView *picker = (UIPickerView *)self.superview;
+    if (![picker isKindOfClass:UIPickerView.class]) {
+        for (UIView* subview in picker.subviews) {
+            if ([subview isKindOfClass:UIPickerView.class]) {
+                picker = (UIPickerView *)subview;
+            }
+        }
+    }
+    NSAssert([picker isKindOfClass:UIPickerView.class], @"Superview must contain a picker view");
+    self.frame = (CGRect){CGPointZero, picker.frame.size};
+    
+    NSInteger n = picker.numberOfComponents;
+    if (n < 1) return;
+    
+    const CGFloat separatorWidth = 8.0f;
+    const CGFloat sectionExceedWidth = -2.0f;
+    CGFloat totalWidth = picker.bounds.size.width;
+    CGFloat panesWidth = totalWidth - separatorWidth * (n - 1);
+    for (NSInteger i = 0; i < n; i++) {
+        CGFloat sectionWidth = [picker rowSizeForComponent:i].width + sectionExceedWidth;
+        panesWidth -= sectionWidth;
+    }
+    CGFloat leftPaneWidth = ceilf(panesWidth * 0.5f);
+    CGFloat rightPaneWidth = panesWidth - leftPaneWidth;
+    CGFloat totalHeight = picker.bounds.size.height;
+    CGRect totalRect = CGRectMake(0, 0, totalWidth, totalHeight);
+    
+    UIBezierPath* path = [UIBezierPath bezierPathWithRect:totalRect];
+    UIEdgeInsets insets = UIEdgeInsetsMake(10.0f, leftPaneWidth, 10.0f, rightPaneWidth);
+    [path appendPath:[UIBezierPath bezierPathWithRect:UIEdgeInsetsInsetRect(totalRect, insets)]];
+    [path applyTransform:CGAffineTransformMakeScale(1, -1)];
+    self.textureLayer.path = path.CGPath;
+    
+    UIImageView* leftPane = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, leftPaneWidth, totalHeight)];
+    leftPane.image = [self imageForLeftPane];
+    leftPane.contentStretch = CGRectMake(0, 0, 0, 1);
+    [self addSubview:leftPane];
+    
+    UIImageView* rightPane = [[UIImageView alloc] initWithFrame:CGRectMake(totalWidth - rightPaneWidth, 0, rightPaneWidth, totalHeight)];
+    rightPane.image = [self imageForRightPane];
+    rightPane.contentStretch = CGRectMake(1, 0, 0, 1);
+    [self addSubview:rightPane];
+    
+    CGFloat x = leftPaneWidth;
+    
+    UIColor *topCornerColor;
+    UIColor *bottomCornerColor;
+    
+    if ([[UIScreen mainScreen] respondsToSelector:@selector(displayLinkWithTarget:selector:)] && ([UIScreen mainScreen].scale == 2.0)) {
+        topCornerColor = [UIColor colorWithRed:56.f/255 green:57.f/255 blue:60.f/255 alpha:1.0f];
+        bottomCornerColor = [UIColor colorWithRed:60.f/255 green:60.f/255 blue:71.f/255 alpha:1.0f];
+    } else {
+        topCornerColor = [UIColor colorWithRed:50.f/255 green:50.f/255 blue:56.f/255 alpha:1.0f];
+        bottomCornerColor = [UIColor colorWithRed:61.f/255 green:61.f/255 blue:71.f/255 alpha:1.0f];
+    }
+    
+    UIView *topLeftCorner = [[UIView alloc] initWithFrame:CGRectMake(x, 10, 3, .5)];
+    topLeftCorner.backgroundColor = topCornerColor;
+    [self addSubview:topLeftCorner];
+    
+    UIView *topRightCorner = [[UIView alloc] initWithFrame:CGRectMake(totalWidth - rightPaneWidth - 3, 10, 3, 0.5)];
+    topRightCorner.backgroundColor = topCornerColor;
+    [self addSubview:topRightCorner];
+    
+    UIView *bottomLeftCorner = [[UIView alloc] initWithFrame:CGRectMake(x, totalHeight - 10.5, 3, 0.5)];
+    bottomLeftCorner.backgroundColor = bottomCornerColor;
+    [self addSubview:bottomLeftCorner];
+    
+    UIView *bottomRightCorner = [[UIView alloc] initWithFrame:CGRectMake(totalWidth - rightPaneWidth - 3, totalHeight - 10.5, 3, 0.5)];
+    bottomRightCorner.backgroundColor = bottomCornerColor;
+    [self addSubview:bottomRightCorner];
+    
+    for (NSInteger i = 0;; i++) {
+        
+        CGFloat sectionWidth = [picker rowSizeForComponent:i].width + sectionExceedWidth;
+        
+        UIImageView* sectionWheel = [[UIImageView alloc] initWithFrame:CGRectMake(x, 0, sectionWidth, totalHeight)];
+        sectionWheel.image = [self imageForSectionWheel];
+        sectionWheel.contentStretch = CGRectMake(0, 0.25f, 1, 0.5f);
+        [self addSubview:sectionWheel];
+        x += sectionWidth;
+        
+        if (i == n - 1) break;
+        
+        UIImageView* sectionsSeparator = [[UIImageView alloc] initWithFrame:CGRectMake(x, 0, separatorWidth, totalHeight)];
+        sectionsSeparator.image = [self imageForSectionsSeparator];
+        sectionsSeparator.contentStretch = CGRectMake(0, 0.25f, 1, 0.5f);
+        [self addSubview:sectionsSeparator];
+        x += separatorWidth;
+    }
+    
+    picker.showsSelectionIndicator = NO;
+    UIImage * glassImage = [self imageForGlass];
+    if (glassImage != nil) {
+        CGFloat glassHeight = glassImage.size.height;
+        CGFloat glassY = round(0.5f * (totalHeight - glassHeight));
+        const CGFloat glassExceed = 6.0f;
+        CGRect glassFrame = CGRectMake(leftPaneWidth - glassExceed, glassY, totalWidth - panesWidth + 2*glassExceed, glassHeight);
+        UIImageView* glass = [[UIImageView alloc] initWithFrame:glassFrame];
+        glass.image = glassImage;
+        glass.contentStretch = CGRectMake(0.5f, 0, 0, 1);
+        [self addSubview:glass];
+    }
+}
+
+@end

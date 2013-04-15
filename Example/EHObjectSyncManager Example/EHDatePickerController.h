@@ -16,7 +16,7 @@ typedef NS_ENUM(NSUInteger, EHDatePickerControllerCompletionType) {
 typedef void (^dateChangedBlock)(NSDate *date);
 typedef void (^datePickerControllerCompletionBlock)(EHDatePickerControllerCompletionType completionType);
 
-@interface EHDatePickerController : NSObject <UITextFieldDelegate>
+@interface EHDatePickerController : NSObject
 
 @property (nonatomic, strong, readonly) UITextField *hiddenTextField;
 @property (nonatomic, strong, readonly) UIDatePicker *datePicker;

@@ -3,10 +3,14 @@ platform :ios, '6.0'
 xcodeproj 'EHObjectSyncManager Example'
 
 pod 'RestKit',            '0.20.0rc1'
-# pod 'MSTableKit',       :git => 'https://github.com/monospacecollective/MSTableKit.git', :branch => 'development'
 pod 'FormatterKit',       '~> 1.1.1'
 pod 'PonyDebugger',       '0.2.1beta1'
 pod 'A2DynamicDelegate',  '~> 2.0.2'
+
+# Monospace Pods
+# pod 'MSTableKit',             :git => 'https://github.com/monospacecollective/MSTableKit.git', :branch => 'development'
+pod 'UIControl-BlockAction',  :git => 'https://github.com/monospacecollective/UIControl-BlockAction.git'
+pod 'UIView-Autolayout',      :git => 'https://github.com/eric-horacek/UIView-Autolayout'
 
 # Local Development
 pod 'MSTableKit',         :local => '~/Development/MSTableKit'

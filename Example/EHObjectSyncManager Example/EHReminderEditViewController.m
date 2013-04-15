@@ -9,6 +9,8 @@
 #import "EHReminderEditViewController.h"
 #import "EHReminder.h"
 #import "EHTask.h"
+#import "EHDatePickerController.h"
+#import "EHStyleManager.h"
 
 // Reuse Identifiers
 NSString *const EHReminderReuseIdentifierRemindAt = @"Remind At";
@@ -16,9 +18,10 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 
 @interface EHReminderEditViewController ()
 
-@property (nonatomic, strong) MSCollectionViewTableLayout *collectionViewLayout;
+@property (nonatomic, strong) MSColectionViewStaticTableLayout *collectionViewLayout;
 @property (nonatomic, strong, readonly) EHReminder *reminder;
 @property (nonatomic, strong) EHTask *privateTask;
+@property (nonatomic, strong) EHDatePickerController *remindAtDatePickerController;
 
 - (void)prepareSections;
 
@@ -28,7 +31,7 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 
 - (void)loadView
 {
-    self.collectionViewLayout = [[MSCollectionViewTableLayout alloc] init];
+    self.collectionViewLayout = [[MSColectionViewStaticTableLayout alloc] init];
     self.collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:self.collectionViewLayout];
     self.view = self.collectionView;
 }
@@ -51,15 +54,32 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
             NSAssert(self.privateTask, @"Unable to find task in private context, unable to proceed");
         }];
         self.reminder.task = self.privateTask;
-        self.reminder.remindAt = [NSDate date];
     }
     
-    self.navigationItem.title = (self.reminder.isInserted ? @"New Reminder" : @"Edit Reminder");
-    self.navigationController.navigationBar.tintColor = [UIColor blackColor];
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Cancel" style:UIBarButtonItemStylePlain target:self action:@selector(cancelObject)];
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Save" style:UIBarButtonItemStylePlain target:self action:@selector(saveObject)];
+    self.remindAtDatePickerController = [EHDatePickerController new];
+    [self.view addSubview:self.remindAtDatePickerController.hiddenTextField];
+    __weak typeof (self) weakSelf = self;
+    self.remindAtDatePickerController.completionBlock = ^(EHDatePickerControllerCompletionType completionType) {
+        if (completionType == EHDatePickerControllerCompletionTypeClear) {
+            weakSelf.reminder.remindAt = nil;
+        }
+        [weakSelf prepareSections];
+        [weakSelf.collectionView reloadData];
+    };
+    self.remindAtDatePickerController.dateChangedBlock = ^(NSDate *date) {
+        weakSelf.reminder.remindAt = date;
+    };
     
-    self.collectionView.backgroundColor = [UIColor whiteColor];
+    self.navigationItem.title = (self.reminder.isInserted ? @"New Reminder" : @"Edit Reminder");
+
+    self.navigationItem.leftBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002421" action:^{
+        [weakSelf cancelObject];
+    }];
+    self.navigationItem.rightBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002713" action:^{
+        [weakSelf saveObject];
+    }];
+    
+    self.collectionView.backgroundColor = [UIColor colorWithHexString:@"eeeeee"];
     [self prepareSections];
 }
 
@@ -123,7 +143,9 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 {
     UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Warning" message:@"Are you sure you want to delete this reminder?" delegate:nil cancelButtonTitle:@"No" otherButtonTitles:@"Yes", nil];
     A2DynamicDelegate *dynamicDelegate = alert.dynamicDelegate;
+    __weak typeof (self) weakSelf = self;
     [dynamicDelegate implementMethod:@selector(alertView:didDismissWithButtonIndex:) withBlock:^(UIAlertView *alertView, NSInteger buttonIndex) {
+        [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
         if (buttonIndex == 1) completion();
     }];
     alert.delegate = dynamicDelegate;
@@ -154,9 +176,10 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
             MSTableClass : MSRightDetailGroupedTableViewCell.class,
             MSTableConfigurationBlock : ^(MSRightDetailGroupedTableViewCell *cell){
                 cell.title.text = @"Remind At";
-                cell.detail.text = weakSelf.reminder.remindAtString;
+                cell.detail.text = (weakSelf.reminder.remindAt ? weakSelf.reminder.remindAtString : @"None");
             },
             MSTableItemSelectionBlock : ^(NSIndexPath *indexPath) {
+                [weakSelf.remindAtDatePickerController.hiddenTextField becomeFirstResponder];
             }
         }]
     }];

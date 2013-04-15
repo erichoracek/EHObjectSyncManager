@@ -10,14 +10,17 @@
 #import "EHTaskEditViewController.h"
 #import "EHObjectSyncManager.h"
 #import "EHTask.h"
+#import "EHStyleManager.h"
+#import "EHEtchView.h"
 
 NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
+NSString * const EHEtchReuseIdentifier = @"EHEtchReuseIdentifier";
 
 @interface EHTasksViewController () <NSFetchedResultsControllerDelegate>
 
 @property (nonatomic, strong) UIRefreshControl *refreshControl;
 @property (nonatomic, strong) NSFetchedResultsController *fetchedResultsController;
-@property (nonatomic, strong) UICollectionViewFlowLayout *collectionViewLayout;
+@property (nonatomic, strong) MSCollectionViewTableLayout *collectionViewLayout;
 
 - (void)loadData;
 - (void)applicationDidBecomeActive:(NSNotification *)notification;
@@ -37,7 +40,7 @@ NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
 
 - (void)loadView
 {
-    self.collectionViewLayout = [[UICollectionViewFlowLayout alloc] init];
+    self.collectionViewLayout = [[MSCollectionViewTableLayout alloc] init];
     self.collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:self.collectionViewLayout];
 }
 
@@ -61,12 +64,22 @@ NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
     [self.collectionView addSubview:self.refreshControl];
     
     self.collectionView.alwaysBounceVertical = YES;
-    self.collectionView.backgroundColor = [UIColor whiteColor];
+    self.collectionView.backgroundColor = [UIColor colorWithHexString:@"eeeeee"];
     [self.collectionView registerClass:MSSubtitleDetailPlainTableViewCell.class forCellWithReuseIdentifier:EHTaskCellReuseIdentifier];
+    [self.collectionViewLayout registerClass:MSTableCellEtch.class forDecorationViewOfKind:MSCollectionElementKindCellEtch];
     
     self.navigationItem.title = @"Tasks";
-    self.navigationController.navigationBar.tintColor = [UIColor blackColor];
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(new)];
+    
+    __weak typeof (self) weakSelf = self;
+    self.navigationItem.rightBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"+" action:^{
+        EHTaskEditViewController *taskEditViewController = [[EHTaskEditViewController alloc] init];
+        taskEditViewController.managedObjectContext = weakSelf.managedObjectContext;
+        taskEditViewController.dismissBlock = ^{
+            [weakSelf dismissViewControllerAnimated:YES completion:nil];
+        };
+        UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:taskEditViewController];
+        [weakSelf presentViewController:navigationController animated:YES completion:nil];
+    }];
 }
 
 #pragma mark - EHTasksViewController
@@ -89,18 +102,6 @@ NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
     }];
 }
 
-- (void)new
-{
-    EHTaskEditViewController *taskEditViewController = [[EHTaskEditViewController alloc] init];
-    taskEditViewController.managedObjectContext = self.managedObjectContext;
-    __weak typeof (self) weakSelf = self;
-    taskEditViewController.dismissBlock = ^{
-        [weakSelf dismissViewControllerAnimated:YES completion:nil];
-    };
-    UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:taskEditViewController];
-    [self presentViewController:navigationController animated:YES completion:nil];
-}
-
 #pragma mark - UICollectionViewDataSource
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView
@@ -118,23 +119,9 @@ NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
 {
     MSTableCell *cell = [self.collectionView dequeueReusableCellWithReuseIdentifier:EHTaskCellReuseIdentifier forIndexPath:indexPath];
     EHTask *task = [self.fetchedResultsController objectAtIndexPath:indexPath];
-    
     cell.title.text = task.name;
-    
-    static TTTTimeIntervalFormatter *timeIntervalFormatter;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        timeIntervalFormatter = [[TTTTimeIntervalFormatter alloc] init];
-    });
-    
-    if (task.completed) {
-        cell.detail.text = [NSString stringWithFormat:@"Completed %@", [timeIntervalFormatter stringForTimeInterval:[task.completedAt timeIntervalSinceDate:NSDate.date]]];
-    } else {
-        cell.detail.text = @"Incomplete";
-    }
-    
+    cell.detail.text = (task.dueAt ? [NSString stringWithFormat:@"Due %@", task.dueAtString] : nil);
     cell.accessoryType = (task.completed ? MSTableCellAccessoryCheckmark : MSTableCellAccessoryNone);
-    
     return cell;
 }
 

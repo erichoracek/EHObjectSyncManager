@@ -55,9 +55,9 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         dateFormatter = [[NSDateFormatter alloc] init];
-        dateFormatter.dateFormat = @"EEE, MMM d 'at' h:mm a";
+        dateFormatter.dateFormat = @"EEE MMM d, h:mm a";
     });
-    return (self.dueAt ? [dateFormatter stringFromDate:self.dueAt] : @"None");
+    return (self.dueAt ? [dateFormatter stringFromDate:self.dueAt] : nil);
 }
 
 - (NSString *)completedAtString
@@ -66,9 +66,9 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         dateFormatter = [[NSDateFormatter alloc] init];
-        dateFormatter.dateFormat = @"EEE, MMM d 'at' h:mm a";
+        dateFormatter.dateFormat = @"EEE MMM d, h:mm a";
     });
-    return (self.completedAt ? [dateFormatter stringFromDate:self.completedAt] : @"None");
+    return (self.completedAt ? [dateFormatter stringFromDate:self.completedAt] : nil);
 }
 
 @end

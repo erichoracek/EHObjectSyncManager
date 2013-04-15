@@ -7,12 +7,18 @@
 //
 
 #import "EHDatePickerController.h"
+#import "EHStyleManager.h"
+#import "IXPickerOverlayView.h"
 
-@interface EHDatePickerController ()
+@interface EHDatePickerController () <UITextFieldDelegate>
 
 @property (nonatomic, strong, readwrite) UITextField *hiddenTextField;
 @property (nonatomic, strong, readwrite) UIDatePicker *datePicker;
 @property (nonatomic, strong, readwrite) UIToolbar *accessoryToolbar;
+@property (nonatomic, strong) IXPickerOverlayView *pickerOverlayView;
+
+- (void)clear;
+- (void)save;
 
 @end
 
@@ -24,8 +30,14 @@
     if (self) {
         self.accessoryToolbar = [UIToolbar new];
         self.accessoryToolbar.tintColor = [UIColor blackColor];
-        UIBarButtonItem* clearBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Clear" style:UIBarButtonItemStyleBordered target:self action:@selector(accessoryToolbarClearButtonTapped:)];
-        UIBarButtonItem* saveBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Save" style:UIBarButtonItemStyleBordered target:self action:@selector(accessoryToolbarSaveButtonTapped:)];
+        
+        __weak typeof (self) weakSelf = self;
+        UIBarButtonItem* clearBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002421" action:^{
+            [weakSelf clear];
+        }];
+        UIBarButtonItem *saveBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002713" action:^{
+            [weakSelf save];
+        }];
         UIBarButtonItem *flex = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];
         self.accessoryToolbar.items = @[ clearBarButtonItem, flex, saveBarButtonItem ];
         [self.accessoryToolbar sizeToFit];
@@ -37,6 +49,9 @@
         self.datePicker = [[UIDatePicker alloc] initWithFrame:CGRectZero];
         [self.datePicker addTarget:self action:@selector(dateChangedForDueDatePicker:) forControlEvents:UIControlEventValueChanged];
         self.datePicker.datePickerMode = UIDatePickerModeDateAndTime;
+        
+        self.pickerOverlayView = [IXPickerOverlayView new];
+        [self.datePicker addSubview:self.pickerOverlayView];
         
         self.hiddenTextField.inputView = self.datePicker;
         self.hiddenTextField.inputAccessoryView = self.accessoryToolbar;
@@ -51,14 +66,29 @@
     if (self.dateChangedBlock) self.dateChangedBlock(self.datePicker.date);
 }
 
-- (void)accessoryToolbarClearButtonTapped:(id)sender
+- (void)clear;
 {
     if (self.completionBlock) self.completionBlock(EHDatePickerControllerCompletionTypeClear);
 }
 
-- (void)accessoryToolbarSaveButtonTapped:(id)sender
+- (void)save;
 {
     if (self.completionBlock) self.completionBlock(EHDatePickerControllerCompletionTypeSave);
+}
+
+#pragma mark - UITextFieldDelegate
+
+- (BOOL)textFieldShouldBeginEditing:(UITextField *)textField
+{
+    [self.pickerOverlayView setNeedsLayout];
+    return YES;
+}
+
+- (void)textFieldDidBeginEditing:(UITextField *)textField
+{
+    if (self.dateChangedBlock) self.dateChangedBlock(self.datePicker.date);
+    [self.datePicker.superview addSubview:self.pickerOverlayView];
+    self.pickerOverlayView.frame = self.datePicker.frame;
 }
 
 @end

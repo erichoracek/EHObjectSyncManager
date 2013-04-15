@@ -11,6 +11,7 @@
 #import "EHReminder.h"
 #import "EHReminderEditViewController.h"
 #import "EHDatePickerController.h"
+#import "EHStyleManager.h"
 
 // Reuse Identifiers
 NSString *const EHTaskReuseIdentifierName = @"Name";
@@ -22,9 +23,9 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 
 @interface EHTaskEditViewController () <UITextFieldDelegate>
 
-@property (nonatomic, strong) MSCollectionViewTableLayout *collectionViewLayout;
-@property (nonatomic, strong) EHDatePickerController *datePickerController;
+@property (nonatomic, strong) MSColectionViewStaticTableLayout *collectionViewLayout;
 @property (nonatomic, strong, readonly) EHTask *task;
+@property (nonatomic, strong) EHDatePickerController *dueAtDatePickerController;
 
 - (void)prepareSections;
 
@@ -36,7 +37,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 
 - (void)loadView
 {
-    self.collectionViewLayout = [[MSCollectionViewTableLayout alloc] init];
+    self.collectionViewLayout = [[MSColectionViewStaticTableLayout alloc] init];
     self.collectionView = [[UICollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:self.collectionViewLayout];
     self.view = self.collectionView;
 }
@@ -47,30 +48,30 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
     
     [[PDDebugger defaultInstance] addManagedObjectContext:self.privateContext withName:@"EHTaskEditViewController Context"];
     
-    self.datePickerController = [EHDatePickerController new];
-    [self.view addSubview:self.datePickerController.hiddenTextField];
+    self.dueAtDatePickerController = [EHDatePickerController new];
+    [self.view addSubview:self.dueAtDatePickerController.hiddenTextField];
     __weak typeof (self) weakSelf = self;
-    self.datePickerController.completionBlock = ^(EHDatePickerControllerCompletionType completionType) {
-        switch (completionType) {
-            case EHDatePickerControllerCompletionTypeClear:
-                weakSelf.task.dueAt = nil;
-                break;
-            case EHDatePickerControllerCompletionTypeSave:
-                break;
+    self.dueAtDatePickerController.completionBlock = ^(EHDatePickerControllerCompletionType completionType) {
+        if (completionType == EHDatePickerControllerCompletionTypeClear) {
+            weakSelf.task.dueAt = nil;
         }
         [weakSelf prepareSections];
         [weakSelf.collectionView reloadData];
     };
-    self.datePickerController.dateChangedBlock = ^(NSDate *date) {
+    self.dueAtDatePickerController.dateChangedBlock = ^(NSDate *date) {
         weakSelf.task.dueAt = date;
     };
     
     self.navigationItem.title = (self.task.isInserted ? @"New Task" : @"Edit Task");
-    self.navigationController.navigationBar.tintColor = [UIColor blackColor];
-    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Cancel" style:UIBarButtonItemStylePlain target:self action:@selector(cancelObject)];
-    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Save" style:UIBarButtonItemStylePlain target:self action:@selector(saveObject)];
+
+    self.navigationItem.leftBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002421" action:^{
+        [weakSelf cancelObject];
+    }];
+    self.navigationItem.rightBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002713" action:^{
+        [weakSelf saveObject];
+    }];
     
-    self.collectionView.backgroundColor = [UIColor whiteColor];
+    self.collectionView.backgroundColor = [UIColor colorWithHexString:@"eeeeee"];
     [self prepareSections];
 }
 
@@ -135,7 +136,9 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 {
     UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Warning" message:@"Are you sure you want to delete this task?" delegate:nil cancelButtonTitle:@"No" otherButtonTitles:@"Yes", nil];
     A2DynamicDelegate *dynamicDelegate = alert.dynamicDelegate;
+    __weak typeof (self) weakSelf = self;
     [dynamicDelegate implementMethod:@selector(alertView:didDismissWithButtonIndex:) withBlock:^(UIAlertView *alertView, NSInteger buttonIndex) {
+        [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
         if (buttonIndex == 1) completion();
     }];
     alert.delegate = dynamicDelegate;
@@ -167,6 +170,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
             MSTableClass : MSTextFieldGroupedTableViewCell.class,
             MSTableConfigurationBlock : ^(MSTextFieldGroupedTableViewCell *cell){
                 cell.textField.text = weakSelf.task.name;
+                cell.textField.keyboardAppearance = UIKeyboardAppearanceAlert;
                 cell.textField.returnKeyType = UIReturnKeyDone;
                 cell.textField.userInteractionEnabled = NO;
                 cell.textField.delegate = weakSelf;
@@ -190,7 +194,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
                 cell.detail.text = weakSelf.task.dueAtString;
             },
             MSTableItemSelectionBlock : ^(NSIndexPath *indexPath) {
-                [weakSelf.datePickerController.hiddenTextField becomeFirstResponder];
+                [weakSelf.dueAtDatePickerController.hiddenTextField becomeFirstResponder];
             }
          }]
      }];

@@ -11,6 +11,7 @@
 #import "EHObjectSyncManager.h"
 #import "EHTask.h"
 #import "EHReminder.h"
+#import "EHStyleManager.h"
 
 @interface EHAppDelegate ()
 
@@ -25,14 +26,13 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
-//    [self setupRestKitWithBaseURL:[NSURL URLWithString:@"http://ehobjectsyncmanager.herokuapp.com"]];
-    [self setupRestKitWithBaseURL:[NSURL URLWithString:@"http://ehobjectsyncmanager.192.168.100.8.xip.io"]];
+    [self setupRestKitWithBaseURL:[NSURL URLWithString:@"http://ehobjectsyncmanager.herokuapp.com"]];
+//    [self setupRestKitWithBaseURL:[NSURL URLWithString:@"http://ehobjectsyncmanager.192.168.100.8.xip.io"]];
 //    [self setupRestKitWithBaseURL:[NSURL URLWithString:@"http://ehobjectsyncmanager.dev"]];
     
     [self setupPonyDebugger];
     
-    [MSTableCell applyDefaultAppearance];
-    [MSGroupedTableViewCell applyDefaultAppearance];
+    [EHStyleManager sharedManager];
     
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     
@@ -184,6 +184,8 @@
     
     [debugger enableNetworkTrafficDebugging];
     [debugger forwardAllNetworkTraffic];
+    
+    [debugger enableViewHierarchyDebugging];
     
     [debugger enableCoreDataDebugging];
     [debugger addManagedObjectContext:[[RKManagedObjectStore defaultStore] persistentStoreManagedObjectContext] withName:@"RKManagedObjectStore Persistent Store"];

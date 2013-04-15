@@ -21,7 +21,7 @@
 {
     if (*remindAt == nil) {
         if (error != NULL) {
-            *error = [NSError errorWithDomain:@"" code:1024 userInfo:@{ NSLocalizedDescriptionKey : @"A reminder requires a time to remind at." }];
+            *error = [NSError errorWithDomain:@"" code:1024 userInfo:@{ NSLocalizedDescriptionKey : @"A reminder requires a \"remind at\" time" }];
         }
         return NO;
     }
@@ -36,9 +36,9 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         dateFormatter = [[NSDateFormatter alloc] init];
-        dateFormatter.dateFormat = @"EEE, MMM d 'at' h:mm a";
+        dateFormatter.dateFormat = @"EEE MMM d, h:mm a";
     });
-    return (self.remindAt ? [dateFormatter stringFromDate:self.remindAt] : @"None");
+    return (self.remindAt ? [dateFormatter stringFromDate:self.remindAt] : nil);
 }
 
 - (BOOL)fired
