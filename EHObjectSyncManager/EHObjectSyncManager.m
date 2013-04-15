@@ -12,7 +12,7 @@ NSString * const EHObjectSyncRequestMethod = @"EHObjectSyncRequestMethod";
 NSString * const EHObjectSyncClassName = @"EHObjectSyncClassName";
 NSString * const EHObjectSyncDate = @"EHObjectSyncDate";
 NSString * const EHObjectSyncPath = @"EHObjectSyncPath";
-NSString * const EHObjectSyncRank = @"EHObjectSyncRequestUserDataRank";
+NSString * const EHObjectSyncRank = @"EHObjectSyncRank";
 NSString * const EHUserDefaultsObjectSyncStore = @"EHUserDefaultsObjectSyncStore";
 
 /**
@@ -38,9 +38,10 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
 @interface EHObjectSyncManager ()
 
 @property (nonatomic, strong) NSMutableArray *mutableSyncDescriptors;
+@property (nonatomic, strong) NSOperationQueue *objectSyncOperationQueue;
 
 - (void)handlePersistentStoreManagedObjectContextDidSaveNotification:(NSNotification *)notification;
-- (void)handleManagedObjectContextDidSaveNotification:(NSNotification *)notification;
+- (void)handleManagedObjectContextDidChangeNotification:(NSNotification *)notification;
 
 - (void)sync;
 - (NSString *)logStringForObjectSyncDictionary:(NSDictionary *)dictionary objectID:(NSString *)objectID;
@@ -54,6 +55,7 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
     self = [super initWithHTTPClient:client];
     if (self) {
         self.mutableSyncDescriptors = [NSMutableArray new];
+        self.objectSyncOperationQueue = [NSOperationQueue new];
     }
     return self;
 }
@@ -65,12 +67,24 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
 
 - (void)configureSyncManagerWithManagedObjectStore:(RKManagedObjectStore *)managedObjectStore
 {
-    self.managedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSPrivateQueueConcurrencyType];
-    self.managedObjectContext.parentContext = managedObjectStore.persistentStoreManagedObjectContext;
-    self.managedObjectContext.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy;
+#warning FIGURE OUT WHY THIS CAUSES SAVE NOTIFICATIONS TO HAVE ALL DELETED OBJECTS EVER
+//    self.managedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
+//    self.managedObjectContext.parentContext = managedObjectStore.persistentStoreManagedObjectContext;
+//    self.managedObjectContext.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy;
     
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleManagedObjectContextDidSaveNotification:) name:NSManagedObjectContextDidSaveNotification object:self.managedObjectContext];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handlePersistentStoreManagedObjectContextDidSaveNotification:) name:NSManagedObjectContextDidSaveNotification object:self.managedObjectContext.parentContext];
+    self.managedObjectContext = managedObjectStore.persistentStoreManagedObjectContext;
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleManagedObjectContextDidChangeNotification:) name:NSManagedObjectContextObjectsDidChangeNotification object:self.managedObjectContext];
+//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handlePersistentStoreManagedObjectContextDidSaveNotification:) name:NSManagedObjectContextDidSaveNotification object:self.managedObjectContext.parentContext];
+    
+    __weak typeof (self) weakSelf = self;
+    [self.HTTPClient setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status) {
+        if ((status == AFNetworkReachabilityStatusReachableViaWiFi) || (status == AFNetworkReachabilityStatusReachableViaWWAN)) {
+            [weakSelf.managedObjectContext performBlock:^{
+                [weakSelf sync];
+            }];
+        }
+    }];
 }
 
 #pragma mark - EHObjectSyncManager
@@ -117,49 +131,22 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
 
 #pragma mark Managed Object Context Save Notification
 
-- (void)handleManagedObjectContextDidSaveNotification:(NSNotification *)notification
+- (void)handleManagedObjectContextDidChangeNotification:(NSNotification *)notification
 {
     NSAssert([notification object] == self.managedObjectContext, @"Received Managed Object Context Did Save Notification for Unexpected Context: %@", [notification object]);
     
-//    NSSet *(^localManagedObjectContextObjects)(NSSet *objects) = ^NSSet *(NSSet *objects) {
-//        NSMutableSet *localObjects = [NSMutableSet set];
-//        for (NSManagedObject *fetchedObject in objects) {
-//            NSManagedObject *localManagedObject = [self.managedObjectContext existingObjectWithID:fetchedObject.objectID error:nil];
-//            [localObjects addObject:localManagedObject];
-//        }
-//        return localObjects;
-//    };
-//    
-//    NSSet *deletedObjects = localManagedObjectContextObjects([notification.userInfo objectForKey:NSDeletedObjectsKey]);
-//    NSSet *updatedObjects = localManagedObjectContextObjects([notification.userInfo objectForKey:NSUpdatedObjectsKey]);
-//    NSSet *insertedObjects = localManagedObjectContextObjects([notification.userInfo objectForKey:NSInsertedObjectsKey]);
-//    
-//    if ((updatedObjects.count == 0) && (insertedObjects.count == 0) && (deletedObjects.count == 0)) {
-//        RKLogCritical(@"No changes, returning");
-//        return;
-//    } else {
-//        if (updatedObjects.count) NSLog(@"Updated Objects %@", updatedObjects);
-//        if (insertedObjects.count) NSLog(@"Inserted Objects %@", insertedObjects);
-//        if (deletedObjects.count) NSLog(@"Deleted Objects %@", deletedObjects);
-//    }
-    
-    NSSet *deletedObjects = [notification.userInfo objectForKey:NSDeletedObjectsKey];
-    NSSet *updatedObjects = [notification.userInfo objectForKey:NSUpdatedObjectsKey];
-    NSSet *insertedObjects = [notification.userInfo objectForKey:NSInsertedObjectsKey];
+    NSSet *deletedObjects = notification.userInfo[NSDeletedObjectsKey];
+    NSSet *updatedObjects = notification.userInfo[NSUpdatedObjectsKey];
+    NSSet *insertedObjects = notification.userInfo[NSInsertedObjectsKey];
     
     if ((updatedObjects.count == 0) && (insertedObjects.count == 0) && (deletedObjects.count == 0)) {
         RKLogCritical(@"No changes, returning");
         return;
     } else {
-        if (updatedObjects.count) NSLog(@"Updated Objects %@", updatedObjects);
-        if (insertedObjects.count) NSLog(@"Inserted Objects %@", insertedObjects);
-        if (deletedObjects.count) NSLog(@"Deleted Objects %@", deletedObjects);
+        if (insertedObjects.count) NSLog(@"Inserted Objects %@", [insertedObjects valueForKey:@"objectID"]);
+        if (updatedObjects.count) NSLog(@"Updated Objects %@", [updatedObjects valueForKey:@"objectID"]);
+        if (deletedObjects.count) NSLog(@"Deleted Objects %@", [deletedObjects valueForKey:@"objectID"]);
     }
-    
-//#warning return
-//    return;
-    
-//    [self.managedObjectContext performBlock:^{
     
     // Instantiate the synchronization dictionary
     NSMutableDictionary *objectSyncStoreDictionary = [[[NSUserDefaults standardUserDefaults] objectForKey:EHUserDefaultsObjectSyncStore] mutableCopy];
@@ -254,9 +241,10 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
 
 - (void)sync
 {
-    if ([self.operationQueue operationCount]) {
-        NSLog(@"Awaiting execution of %ld enqueued connection operations: %@", (long) [self.operationQueue operationCount], [self.operationQueue operations]);
-        [self.operationQueue waitUntilAllOperationsAreFinished];
+    if ([self.objectSyncOperationQueue operationCount]) {
+        NSLog(@"Awaiting execution of %ld enqueued connection operations: %@", (long) [self.objectSyncOperationQueue operationCount], [self.objectSyncOperationQueue operations]);
+//        [self.objectSyncOperationQueue waitUntilAllOperationsAreFinished];
+        return;
     }
     
     // If the object sync store is empty, no sync is needed
@@ -264,78 +252,76 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
     if (objectSyncDictionary == nil || objectSyncDictionary.count == 0) {
         return;
     }
-    NSLog(@"Sync Dictionary: %@", objectSyncDictionary);
     
-//    NSMutableArray *objectSyncRequestOperations = [NSMutableArray array];
-//    __block NSUInteger lowestObjectSyncRank = NSUIntegerMax;
-
+    // Establish a sync rank dictionation with each of the operations for that rank (keyed by rank)
+    NSMutableDictionary *operationsForSyncRank = [NSMutableDictionary new];
+    self.objectSyncOperationQueue.suspended = YES;
+    
     [objectSyncDictionary enumerateKeysAndObjectsUsingBlock:^(NSString *objectIDStringURI, NSDictionary *objectDictionary, BOOL *stop) {
         
-        RKRequestMethod syncObjectRequestMethod = [[objectDictionary objectForKey:EHObjectSyncRequestMethod] integerValue];
+        NSLog(@"OBJECT SYNC: Building Sync Operation: %@", [self logStringForObjectSyncDictionary:objectDictionary objectID:objectIDStringURI]);
         
-        NSManagedObject *syncObject;
-        if (syncObjectRequestMethod == RKRequestMethodPOST || syncObjectRequestMethod == RKRequestMethodPUT) {
-            NSManagedObjectID *managedObjectID = [[self.managedObjectContext persistentStoreCoordinator] managedObjectIDForURIRepresentation:[NSURL URLWithString:objectIDStringURI]];
-            syncObject = [self.managedObjectContext existingObjectWithID:managedObjectID error:nil];
+        // Add an array for this rank if it doesn't exist
+        NSMutableArray *syncRankOperations = operationsForSyncRank[objectDictionary[EHObjectSyncRank]];
+        if (!syncRankOperations) {
+            syncRankOperations = [NSMutableArray new];
+            operationsForSyncRank[objectDictionary[EHObjectSyncRank]] = syncRankOperations;
         }
         
-        // Post
-        if (syncObjectRequestMethod == RKRequestMethodPOST) {
-            NSLog(@"Performing POST %@", [self logStringForObjectSyncDictionary:objectSyncDictionary objectID:objectIDStringURI]);
-            RKObjectRequestOperation *requestOperation = [self appropriateObjectRequestOperationWithObject:syncObject method:RKRequestMethodPOST path:nil parameters:nil];
-            [requestOperation setCompletionBlockWithSuccess:^(RKObjectRequestOperation *operation, RKMappingResult *mappingResult) {
-                NSLog(@"POST Succeeded %@", [self logStringForObjectSyncDictionary:objectSyncDictionary objectID:objectIDStringURI]);
-            } failure:^(RKObjectRequestOperation *operation, NSError *error) {
-                NSLog(@"POST Failure %@", error);
-            }];
-            
-            EHSyncRequestCleanupOperation *cleanupOperation = [[EHSyncRequestCleanupOperation alloc] init];
-            cleanupOperation.requestOperation = requestOperation;
-            cleanupOperation.objectIDStringURI = objectIDStringURI;
-            [cleanupOperation addDependency:requestOperation];
-            
-            [self.operationQueue addOperation:requestOperation];
-            [self.operationQueue addOperation:cleanupOperation];
+        EHObjectSyncOperation *objectSyncOperation = [EHObjectSyncOperation new];
+        objectSyncOperation.objectIDStringURI = objectIDStringURI;
+        objectSyncOperation.syncClass = NSClassFromString(objectDictionary[EHObjectSyncClassName]);
+        objectSyncOperation.syncDate = objectDictionary[EHObjectSyncDate];
+        objectSyncOperation.syncRank = objectDictionary[EHObjectSyncRank];
+        objectSyncOperation.syncRequestMethod = objectDictionary[EHObjectSyncRequestMethod];
+        
+        switch ([objectDictionary[EHObjectSyncRequestMethod] integerValue]) {
+            case RKRequestMethodPOST:
+            case RKRequestMethodPUT: {
+                NSManagedObjectID *managedObjectID = [[self.managedObjectContext persistentStoreCoordinator] managedObjectIDForURIRepresentation:[NSURL URLWithString:objectIDStringURI]];
+                NSError *error;
+                NSManagedObject *syncObject = [self.managedObjectContext existingObjectWithID:managedObjectID error:&error];
+                // If we're unable to find object in our MOC, remove it from sync dictionary, and don't enqueue the request
+                if (!syncObject) {
+                    NSMutableDictionary *synchronizationDictionary = [[[NSUserDefaults standardUserDefaults] objectForKey:EHUserDefaultsObjectSyncStore] mutableCopy];
+                    NSLog(@"Removing orphaned object %@, error %@", objectIDStringURI, [error debugDescription]);
+                    [synchronizationDictionary removeObjectForKey:objectIDStringURI];
+                    [[NSUserDefaults standardUserDefaults] setObject:synchronizationDictionary forKey:EHUserDefaultsObjectSyncStore];
+                    return;
+                }
+                objectSyncOperation.syncObject = syncObject;
+                break;
+            }
+            case RKRequestMethodDELETE:
+                objectSyncOperation.syncPath = objectDictionary[EHObjectSyncPath];
+                break;
+            default:
+                NSAssert(NO, @"Unsupported request method");
+                return;
+                break;
         }
         
-        // Put
-        if (syncObjectRequestMethod == RKRequestMethodPUT) {
-            NSLog(@"Performing PUT %@", [self logStringForObjectSyncDictionary:objectSyncDictionary objectID:objectIDStringURI]);
-            RKObjectRequestOperation *requestOperation = [self appropriateObjectRequestOperationWithObject:syncObject method:RKRequestMethodPUT path:nil parameters:nil];
-            [requestOperation setCompletionBlockWithSuccess:^(RKObjectRequestOperation *operation, RKMappingResult *mappingResult) {
-                NSLog(@"PUT Succeeded %@", [self logStringForObjectSyncDictionary:objectSyncDictionary objectID:objectIDStringURI]);
-            } failure:^(RKObjectRequestOperation *operation, NSError *error) {
-                NSLog(@"PUT Failure %@", error);
-            }];
-            
-            EHSyncRequestCleanupOperation *cleanupOperation = [[EHSyncRequestCleanupOperation alloc] init];
-            cleanupOperation.requestOperation = requestOperation;
-            cleanupOperation.objectIDStringURI = objectIDStringURI;
-            [cleanupOperation addDependency:requestOperation];
-            
-            [self.operationQueue addOperation:requestOperation];
-            [self.operationQueue addOperation:cleanupOperation];
-        }
-        
-        // Delete
-        if (syncObjectRequestMethod == RKRequestMethodDELETE) {
-            NSLog(@"Performing DELETE %@", [self logStringForObjectSyncDictionary:objectSyncDictionary objectID:objectIDStringURI]);
-            NSURLRequest *syncRequest = [(AFHTTPClient *)self requestWithMethod:@"DELETE" path:objectDictionary[EHObjectSyncPath] parameters:nil];
-            AFJSONRequestOperation *requestOperation = [AFJSONRequestOperation JSONRequestOperationWithRequest:syncRequest success:^(NSURLRequest *request, NSHTTPURLResponse *response, id JSON) {
-                NSLog(@"DELETE Succeeded %@", [self logStringForObjectSyncDictionary:objectSyncDictionary objectID:objectIDStringURI]);
-            } failure:^(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error, id JSON) {
-                NSLog(@"DELETE Failure %@", error);
-            }];
-            
-            EHSyncRequestCleanupOperation *cleanupOperation = [[EHSyncRequestCleanupOperation alloc] init];
-            cleanupOperation.requestOperation = requestOperation;
-            cleanupOperation.objectIDStringURI = objectIDStringURI;
-            [cleanupOperation addDependency:requestOperation];
-            
-            [self.operationQueue addOperation:requestOperation];
-            [self.operationQueue addOperation:cleanupOperation];
-        }
+        [self.objectSyncOperationQueue addOperation:objectSyncOperation];
+        [syncRankOperations addObject:objectSyncOperation];
     }];
+    
+    NSArray *sortedRanks = [[operationsForSyncRank allKeys] sortedArrayUsingComparator:^NSComparisonResult(NSNumber *rank1, NSNumber *rank2) {
+        return [rank1 compare:rank2];
+    }];
+    NSNumber *highRank = nil;
+    for (NSNumber *lowRank in sortedRanks) {
+        if (highRank) {
+            NSLog(@"Setting all rank %@ requests to depend on rank %@ requests", lowRank, highRank);
+            for (NSOperation *lowRankOperation in operationsForSyncRank[lowRank]) {
+                for (NSOperation *highRankOperation in operationsForSyncRank[highRank]) {
+                    [lowRankOperation addDependency:highRankOperation];
+                }
+            }
+        }
+        highRank = lowRank;
+    }
+    
+    self.objectSyncOperationQueue.suspended = NO;
 }
 
 - (NSString *)logStringForObjectSyncDictionary:(NSDictionary *)dictionary objectID:(NSString *)objectID
@@ -382,25 +368,112 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
 
 @end
 
-@implementation EHSyncRequestCleanupOperation
+@interface EHObjectSyncOperation()
 
-- (void)main
+@property (nonatomic, assign) BOOL finishedCleanUp;
+@property (nonatomic, strong, readwrite) NSOperation *syncRequestOperation;
+
+@end
+
+@implementation EHObjectSyncOperation
+
+#pragma mark - NSOperation
+
+- (void)start
 {
-    NSAssert([self.requestOperation isFinished], @"Request operation must be finished");
-    // The request was successful
+    // Ready -> Executing
+    [self willChangeValueForKey:@"isExecuting"];
+    [self willChangeValueForKey:@"isReady"];
+    [self didChangeValueForKey:@"isReady"];
+    [self didChangeValueForKey:@"isExecuting"];
     
-    if ([self.requestOperation isKindOfClass:AFJSONRequestOperation.class]) {
-        AFHTTPRequestOperation *requestOperation = (AFHTTPRequestOperation *)self.requestOperation;
-        if (!requestOperation.error) {
-            [self removeObjectFromSyncDictionary];
-        }
-        if (requestOperation.response.statusCode == 404) {
-            [self removeObjectFromSyncDictionary];
-        }
+    [self startRequest];
+}
+
+- (BOOL)isConcurrent
+{
+    return YES;
+}
+
+- (BOOL)isFinished
+{
+    return ([self.syncRequestOperation isFinished] && self.finishedCleanUp);
+}
+
+- (BOOL)isExecuting
+{
+    return ([self.syncRequestOperation isExecuting] || !self.finishedCleanUp);
+}
+
+#pragma mark - EHObjectSyncOperation
+
+- (void)startRequest
+{
+    switch (self.syncRequestMethod.integerValue) {
+        case RKRequestMethodPOST:
+        case RKRequestMethodPUT:
+            NSAssert(self.syncObject, @"A POST and PUT object sync request requres a sync object");
+            break;
+        case RKRequestMethodDELETE:
+            NSAssert(self.syncPath, @"A DELETE object sync request requres a sync path");
+            break;
     }
-    else if ([self.requestOperation isKindOfClass:RKObjectRequestOperation.class]) {
-        
-        RKObjectRequestOperation *requestOperation = (RKObjectRequestOperation *)self.requestOperation;
+    
+    switch (self.syncRequestMethod.integerValue) {
+        case RKRequestMethodPOST: {
+            NSLog(@"Enqueueing POST (%@)", self.syncClass);
+            RKObjectRequestOperation *POSTRequestOperation = [[EHObjectSyncManager sharedManager] appropriateObjectRequestOperationWithObject:self.syncObject method:RKRequestMethodPOST path:nil parameters:nil];
+            [POSTRequestOperation setCompletionBlockWithSuccess:^(RKObjectRequestOperation *operation, RKMappingResult *mappingResult) {
+                NSLog(@"POST Succeeded (%@)", self.syncClass);
+                [self cleanupRequest];
+            } failure:^(RKObjectRequestOperation *operation, NSError *error) {
+                NSLog(@"POST Failure (%@): %@", self.syncClass, error);
+                [self cleanupRequest];
+            }];
+            self.syncRequestOperation = POSTRequestOperation;
+            [[EHObjectSyncManager sharedManager].operationQueue addOperation:POSTRequestOperation];
+            break;
+        }
+        case RKRequestMethodPUT: {
+            NSLog(@"Enqueueing PUT (%@)", self.syncClass);
+            RKObjectRequestOperation *PUTRequestOperation = [[EHObjectSyncManager sharedManager] appropriateObjectRequestOperationWithObject:self.syncObject method:RKRequestMethodPUT path:nil parameters:nil];
+            [PUTRequestOperation setCompletionBlockWithSuccess:^(RKObjectRequestOperation *operation, RKMappingResult *mappingResult) {
+                NSLog(@"PUT Succeeded (%@)", self.syncClass);
+                [self cleanupRequest];
+            } failure:^(RKObjectRequestOperation *operation, NSError *error) {
+                NSLog(@"PUT Failure (%@): %@", self.syncClass, error);
+                [self cleanupRequest];
+            }];
+            self.syncRequestOperation = PUTRequestOperation;
+            [[EHObjectSyncManager sharedManager].operationQueue addOperation:PUTRequestOperation];
+            break;
+        }
+        case RKRequestMethodDELETE: {
+            NSLog(@"Enqueueing DELETE (%@)", self.syncClass);
+            NSURLRequest *deleteRequest = [(AFHTTPClient *)[EHObjectSyncManager sharedManager] requestWithMethod:@"DELETE" path:self.syncPath parameters:nil];
+            AFJSONRequestOperation *DELETERequestOperation = [AFJSONRequestOperation JSONRequestOperationWithRequest:deleteRequest success:^(NSURLRequest *request, NSHTTPURLResponse *response, id JSON) {
+                NSLog(@"DELETE Succeeded (%@)", self.syncClass);
+                [self cleanupRequest];
+            } failure:^(NSURLRequest *request, NSHTTPURLResponse *response, NSError *error, id JSON) {
+                NSLog(@"DELETE Failure (%@): %@", self.syncClass, error);
+                [self cleanupRequest];
+            }];
+            self.syncRequestOperation = DELETERequestOperation;
+            [[EHObjectSyncManager sharedManager].operationQueue addOperation:DELETERequestOperation];
+            break;
+        }
+        default:
+            NSAssert(NO, @"Unsupported request method");
+            break;
+    }
+}
+
+- (void)cleanupRequest;
+{
+    NSAssert([self.syncRequestOperation isFinished], @"Request operation must be finished");
+    
+    if ([self.syncRequestOperation isKindOfClass:RKObjectRequestOperation.class]) {
+        RKObjectRequestOperation *requestOperation = (RKObjectRequestOperation *)self.syncRequestOperation;
         if (!requestOperation.error) {
             [self removeObjectFromSyncDictionary];
         }
@@ -408,12 +481,28 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
             [self removeObjectFromSyncDictionary];
         }
     }
+    else if ([self.syncRequestOperation isKindOfClass:AFJSONRequestOperation.class]) {
+        AFHTTPRequestOperation *requestOperation = (AFHTTPRequestOperation *)self.syncRequestOperation;
+        if (!requestOperation.error) {
+            [self removeObjectFromSyncDictionary];
+        }
+        if (requestOperation.response.statusCode == 404) {
+            [self removeObjectFromSyncDictionary];
+        }
+    }
+
+    // Executing -> Finished
+    [self willChangeValueForKey:@"isFinished"];
+    [self willChangeValueForKey:@"isExecuting"];
+    self.finishedCleanUp = YES;
+    [self didChangeValueForKey:@"isExecuting"];
+    [self didChangeValueForKey:@"isFinished"];
 }
 
 - (void)removeObjectFromSyncDictionary
 {
     NSMutableDictionary *synchronizationDictionary = [[[NSUserDefaults standardUserDefaults] objectForKey:EHUserDefaultsObjectSyncStore] mutableCopy];
-    NSLog(@"Removing URI %@: %@", self.objectIDStringURI, synchronizationDictionary[self.objectIDStringURI]);
+    NSLog(@"Removing URI %@", self.objectIDStringURI);
     [synchronizationDictionary removeObjectForKey:self.objectIDStringURI];
     [[NSUserDefaults standardUserDefaults] setObject:synchronizationDictionary forKey:EHUserDefaultsObjectSyncStore];
 }

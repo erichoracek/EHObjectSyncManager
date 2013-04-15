@@ -22,8 +22,12 @@
 		3A2ED9A4170A453B00E3FD02 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3A2ED9A2170A453B00E3FD02 /* Model.xcdatamodeld */; };
 		3A2ED9A7170A477200E3FD02 /* EHTask.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A2ED9A6170A477200E3FD02 /* EHTask.m */; };
 		3A2ED9AA170A477900E3FD02 /* EHReminder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A2ED9A9170A477900E3FD02 /* EHReminder.m */; };
+		3AA2FD70171BAC4000230E35 /* EHDatePickerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AA2FD6F171BAC4000230E35 /* EHDatePickerController.m */; };
 		3ABE7C1C170D14EF00996086 /* EHTaskEditViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3ABE7C1B170D14EF00996086 /* EHTaskEditViewController.m */; };
 		3ABE7C1F170F240000996086 /* EHManagedObjectEditViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3ABE7C1E170F23FF00996086 /* EHManagedObjectEditViewController.m */; };
+		3AC70ADC171A1A6F00CBA034 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AC70ADB171A1A6F00CBA034 /* SystemConfiguration.framework */; };
+		3AC70ADE171A1A7500CBA034 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AC70ADD171A1A7500CBA034 /* MobileCoreServices.framework */; };
+		3AD3A19B1719DB0400455DB1 /* EHReminderEditViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AD3A19A1719DB0400455DB1 /* EHReminderEditViewController.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,10 +54,16 @@
 		3A2ED9A6170A477200E3FD02 /* EHTask.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHTask.m; sourceTree = "<group>"; };
 		3A2ED9A8170A477900E3FD02 /* EHReminder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHReminder.h; sourceTree = "<group>"; };
 		3A2ED9A9170A477900E3FD02 /* EHReminder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHReminder.m; sourceTree = "<group>"; };
+		3AA2FD6E171BAC4000230E35 /* EHDatePickerController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHDatePickerController.h; sourceTree = "<group>"; };
+		3AA2FD6F171BAC4000230E35 /* EHDatePickerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHDatePickerController.m; sourceTree = "<group>"; };
 		3ABE7C1A170D14EF00996086 /* EHTaskEditViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHTaskEditViewController.h; sourceTree = "<group>"; };
 		3ABE7C1B170D14EF00996086 /* EHTaskEditViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHTaskEditViewController.m; sourceTree = "<group>"; };
 		3ABE7C1D170F23FF00996086 /* EHManagedObjectEditViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHManagedObjectEditViewController.h; sourceTree = "<group>"; };
 		3ABE7C1E170F23FF00996086 /* EHManagedObjectEditViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHManagedObjectEditViewController.m; sourceTree = "<group>"; };
+		3AC70ADB171A1A6F00CBA034 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		3AC70ADD171A1A7500CBA034 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
+		3AD3A1991719DB0400455DB1 /* EHReminderEditViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHReminderEditViewController.h; sourceTree = "<group>"; };
+		3AD3A19A1719DB0400455DB1 /* EHReminderEditViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHReminderEditViewController.m; sourceTree = "<group>"; };
 		57F3CEB0228545DBADD74F3C /* Pods.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.xcconfig; path = Pods/Pods.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -62,6 +72,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3AC70ADE171A1A7500CBA034 /* MobileCoreServices.framework in Frameworks */,
+				3AC70ADC171A1A6F00CBA034 /* SystemConfiguration.framework in Frameworks */,
 				3A2ED980170A248600E3FD02 /* UIKit.framework in Frameworks */,
 				3A2ED982170A248600E3FD02 /* Foundation.framework in Frameworks */,
 				3A2ED984170A248600E3FD02 /* CoreGraphics.framework in Frameworks */,
@@ -120,6 +132,8 @@
 				3A2ED97F170A248600E3FD02 /* UIKit.framework */,
 				3A2ED981170A248600E3FD02 /* Foundation.framework */,
 				3A2ED983170A248600E3FD02 /* CoreGraphics.framework */,
+				3AC70ADD171A1A7500CBA034 /* MobileCoreServices.framework */,
+				3AC70ADB171A1A6F00CBA034 /* SystemConfiguration.framework */,
 				25219DDC8E0B4249AD388DEB /* libPods.a */,
 			);
 			name = Frameworks;
@@ -139,6 +153,10 @@
 				3A2ED9A0170A3B5200E3FD02 /* EHTasksViewController.m */,
 				3ABE7C1A170D14EF00996086 /* EHTaskEditViewController.h */,
 				3ABE7C1B170D14EF00996086 /* EHTaskEditViewController.m */,
+				3AD3A1991719DB0400455DB1 /* EHReminderEditViewController.h */,
+				3AD3A19A1719DB0400455DB1 /* EHReminderEditViewController.m */,
+				3AA2FD6E171BAC4000230E35 /* EHDatePickerController.h */,
+				3AA2FD6F171BAC4000230E35 /* EHDatePickerController.m */,
 				3A2ED986170A248600E3FD02 /* Supporting Files */,
 			);
 			path = "EHObjectSyncManager Example";
@@ -266,6 +284,8 @@
 				3A2CD7E8170B37D90050ABAC /* EHObjectSyncManager.m in Sources */,
 				3ABE7C1C170D14EF00996086 /* EHTaskEditViewController.m in Sources */,
 				3ABE7C1F170F240000996086 /* EHManagedObjectEditViewController.m in Sources */,
+				3AD3A19B1719DB0400455DB1 /* EHReminderEditViewController.m in Sources */,
+				3AA2FD70171BAC4000230E35 /* EHDatePickerController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -376,6 +396,27 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "EHObjectSyncManager Example/EHObjectSyncManager Example-Prefix.pch";
 				INFOPLIST_FILE = "EHObjectSyncManager Example/EHObjectSyncManager Example-Info.plist";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-Wl,-no_compact_unwind",
+					"-licucore",
+					"-framework",
+					AddressBook,
+					"-framework",
+					CFNetwork,
+					"-framework",
+					CoreData,
+					"-framework",
+					CoreLocation,
+					"-framework",
+					MobileCoreServices,
+					"-framework",
+					QuartzCore,
+					"-framework",
+					Security,
+					"-framework",
+					SystemConfiguration,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -388,6 +429,27 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "EHObjectSyncManager Example/EHObjectSyncManager Example-Prefix.pch";
 				INFOPLIST_FILE = "EHObjectSyncManager Example/EHObjectSyncManager Example-Info.plist";
+				OTHER_LDFLAGS = (
+					"-ObjC",
+					"-Wl,-no_compact_unwind",
+					"-licucore",
+					"-framework",
+					AddressBook,
+					"-framework",
+					CFNetwork,
+					"-framework",
+					CoreData,
+					"-framework",
+					CoreLocation,
+					"-framework",
+					MobileCoreServices,
+					"-framework",
+					QuartzCore,
+					"-framework",
+					Security,
+					"-framework",
+					SystemConfiguration,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};

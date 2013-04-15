@@ -7,17 +7,30 @@
 //
 
 #import "EHManagedObjectEditViewController.h"
+#import "EHObjectSyncManager.h"
+
+NSString * const EHEditedObjectID = @"EHEditedObjectID";
+BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *managedObject)
+{
+    return (managedObject.managedObjectContext.userInfo[EHEditedObjectID] && ![managedObject.managedObjectContext.userInfo[EHEditedObjectID] isEqual:managedObject.objectID]);
+}
 
 @interface EHManagedObjectEditViewController () <NSFetchedResultsControllerDelegate>
 
-- (void)obtainPermanentIdsForInsertedObjects;
-- (void)refreshTargetObject;
+@property (nonatomic, assign) BOOL disableMergeForNestedSave;
+
+- (void)handleManagedObjectContextDidSaveNotification:(NSNotification *)notification;
 
 @end
 
 @implementation EHManagedObjectEditViewController
 
 #pragma mark - UIViewController
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
 
 - (void)viewDidLoad
 {
@@ -31,6 +44,8 @@
         self.privateContext.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy;
     }];
     
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleManagedObjectContextDidSaveNotification:) name:NSManagedObjectContextDidSaveNotification object:self.privateContext.parentContext];
+    
     NSParameterAssert([self entityInContext:self.privateContext]);
     
     // If there's no target object, insert one into the private context
@@ -38,13 +53,14 @@
         [self.privateContext performBlockAndWait:^{
             self.privateTargetObject = [[NSManagedObject alloc] initWithEntity:[self entityInContext:self.privateContext] insertIntoManagedObjectContext:self.privateContext];
         }];
+        [self obtainPermanentIdsForInsertedObjects];
     }
     // If a target object exists, locate it in the private context by object ID
     else {
         NSAssert([self.targetObject isKindOfClass:[NSManagedObject class]], @"Target object is not a managed object");
         NSAssert((self.targetObject.managedObjectContext == self.managedObjectContext), @"Target object is not a member of the managed object context");
-        __block NSError *error;
         [self.privateContext performBlockAndWait:^{
+            NSError *error;
             self.privateTargetObject = [self.privateContext existingObjectWithID:self.targetObject.objectID error:&error];
             if (error) {
                 NSLog(@"Error finding private target object in private context, error %@", [error debugDescription]);
@@ -52,6 +68,8 @@
             NSAssert(self.privateTargetObject, @"Unable to find object in private context, unable to proceed");
         }];
     }
+    
+    self.privateContext.userInfo[EHEditedObjectID] = self.privateTargetObject.objectID;
     
     // Prepare a fetch request to monitor the target object
     NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
@@ -64,12 +82,25 @@
     NSError *error;
     BOOL fetchSuccessful = [self.fetchedResultsController performFetch:&error];
     NSAssert2(fetchSuccessful, @"Unable to fetch %@, %@", fetchRequest.entityName, [error debugDescription]);
+    
+    [self reloadObject];
 }
 
 #pragma mark - EHManagedObjectEditViewController
 
+- (void)handleManagedObjectContextDidSaveNotification:(NSNotification *)notification
+{
+    NSAssert([notification object] == self.privateContext.parentContext, @"Received Managed Object Context Did Save Notification for Unexpected Context: %@", [notification object]);
+    if (self.disableMergeForNestedSave) return;
+    [self.privateContext performBlock:^{
+        NSLog(@"MERGING CHANGES FROM PARENT CONTEXT: %@", notification);
+        [self.privateContext mergeChangesFromContextDidSaveNotification:notification];
+    }];
+}
+
 - (NSEntityDescription *)entityInContext:(NSManagedObjectContext *)context;
 {
+    NSAssert(NO, @"Subclasses should override this method");
     return nil;
 }
 
@@ -80,20 +111,51 @@
     if (!temporaryObjectsPredicate) temporaryObjectsPredicate = [NSPredicate predicateWithFormat:@"objectID.isTemporaryID == YES"];
     NSSet *temporaryObjects = [[self.privateContext insertedObjects] filteredSetUsingPredicate:temporaryObjectsPredicate];
     if (temporaryObjects.count) {
-        NSLog(@"Obtaining permanent IDs for inserted objects");
         __block BOOL success;
         __block NSError *error;
         [self.privateContext performBlockAndWait:^{
             success = [self.privateContext obtainPermanentIDsForObjects:[temporaryObjects allObjects] error:&error];
         }];
-        if (!success) NSLog(@"Failed to obtain permanent ID for objects %@ with error %@", temporaryObjects, error);
+        if (!success) NSLog(@"Failed to obtain permanent ID for objects %@ with error %@", [temporaryObjects valueForKey:@"objectID"], error);
+        else NSLog(@"Successfully obtained permanent ID for objects %@", [temporaryObjects valueForKey:@"objectID"]);
     }
 }
+
+- (BOOL)objectExistsRemotely
+{
+    NSAssert(NO, @"Subclasses should override this method");
+    return NO;
+}
+
+- (void)reloadObject
+{
+    __weak typeof(self) weakSelf = self;
+    // Don't load objects that don't exist remotely
+    if (![self objectExistsRemotely]) {
+        return;
+    }
+    [[RKObjectManager sharedManager] getObject:self.privateTargetObject path:nil parameters:nil success:^(RKObjectRequestOperation *operation, RKMappingResult *mappingResult) {
+        [weakSelf didReloadObject];
+    } failure:^(RKObjectRequestOperation *operation, NSError *error) {
+        [weakSelf didFailReloadObjectWithError:error];
+    }];
+}
+
+- (void)didReloadObject
+{
+    
+}
+
+- (void)didFailReloadObjectWithError:(NSError *)error
+{
+    
+}
+
 
 - (void)refreshTargetObject
 {
     [self.managedObjectContext performBlock:^{
-        NSLog(@"Refreshing mapped target object %@ in context %@", self.targetObject, self.managedObjectContext);
+        NSLog(@"Refreshing target object (%@)", self.targetObject.objectID);
         [self.managedObjectContext refreshObject:self.targetObject mergeChanges:YES];
     }];
 }
@@ -113,19 +175,32 @@
 
 - (void)didCancelObject
 {
-    NSLog(@"Successfully cancelled %@", self.targetObject);
+    NSLog(@"Successfully cancelled %@", self.targetObject.objectID);
 }
 
 - (void)saveObject
 {
     [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
     [self willSaveObject];
-    [self obtainPermanentIdsForInsertedObjects];
-    NSError* error;
-    if(![self.privateContext saveToPersistentStore:&error]) {
-        [self didFailSaveObjectWithError:error];
+    __block NSError* error;
+    if ([[EHObjectSyncManager sharedManager] managedObjectContext] == self.managedObjectContext) {
+        [self obtainPermanentIdsForInsertedObjects];
+        self.disableMergeForNestedSave = YES;
+        if ([self.privateContext saveToPersistentStore:&error]) {
+            self.disableMergeForNestedSave = NO;
+            [self didSaveObject];
+        } else {
+            self.disableMergeForNestedSave = NO;
+            [self didFailSaveObjectWithError:error];
+        }
     } else {
-        [self didSaveObject];
+        [self.privateContext performBlockAndWait:^{
+            if ([self.privateContext save:&error]) {
+                [self didSaveObject];
+            } else {
+                [self didFailSaveObjectWithError:error];
+            }
+        }];
     }
     [self refreshTargetObject];
 }
@@ -137,12 +212,12 @@
 
 - (void)didSaveObject
 {
-    NSLog(@"Successfully saved %@", self.targetObject);
+    NSLog(@"Successfully saved (%@)", self.targetObject.objectID);
 }
 
 - (void)didFailSaveObjectWithError:(NSError *)error
 {
-    NSLog(@"Failed to save %@ with error %@", self.targetObject, [error debugDescription]);
+    NSLog(@"Failed to save %@ with error %@", self.targetObject.objectID, [error debugDescription]);
 }
 
 - (void)deleteObject
@@ -152,11 +227,24 @@
         [self.privateContext performBlockAndWait:^{
             [self.privateContext deleteObject:self.privateTargetObject];
         }];
-        NSError *error = nil;
-        if ([self.privateContext saveToPersistentStore:&error]) {
-            [self didDeleteObject];
+        __block NSError *error = nil;
+        if ([[EHObjectSyncManager sharedManager] managedObjectContext] == self.managedObjectContext) {
+            self.disableMergeForNestedSave = YES;
+            if ([self.privateContext saveToPersistentStore:&error]) {
+                self.disableMergeForNestedSave = NO;
+                [self didDeleteObject];
+            } else {
+                self.disableMergeForNestedSave = NO;
+                [self didFailDeleteObjectWithError:error];
+            }
         } else {
-            [self didFailDeleteObjectWithError:error];
+            [self.privateContext performBlockAndWait:^{
+                if ([self.privateContext save:&error]) {
+                    [self didDeleteObject];
+                } else {
+                    [self didFailDeleteObjectWithError:error];
+                }
+            }];
         }
         [self refreshTargetObject];
     }];
@@ -175,6 +263,33 @@
 - (void)didFailDeleteObjectWithError:(NSError *)error
 {
     
+}
+
+- (void)objectWasDeleted
+{
+    NSLog(@"Target object was deleted (%@)", self.privateTargetObject.objectID);
+}
+
+- (void)objectWasUpdated
+{
+    NSLog(@"Target object was updated (%@)", self.privateTargetObject.objectID);
+}
+
+#pragma mark - NSFetchedResultsControllerDelegate
+
+- (void)controller:(NSFetchedResultsController *)controller didChangeObject:(id)anObject atIndexPath:(NSIndexPath *)indexPath forChangeType:(NSFetchedResultsChangeType)type newIndexPath:(NSIndexPath *)newIndexPath
+{
+    NSAssert(anObject == self.privateTargetObject, @"Fetched Results Controller not observing target object");
+    dispatch_async(dispatch_get_main_queue(), ^{
+        switch (type) {
+            case NSFetchedResultsChangeDelete:
+                [self objectWasDeleted];
+                break;
+            case NSFetchedResultsChangeUpdate:
+                [self objectWasUpdated];
+                break;
+        }
+    });
 }
 
 @end

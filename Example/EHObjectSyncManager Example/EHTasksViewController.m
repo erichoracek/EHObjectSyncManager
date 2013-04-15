@@ -56,6 +56,7 @@ NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
     NSAssert2(fetchSuccessful, @"Unable to fetch %@, %@", fetchRequest.entityName, [error debugDescription]);
     
     self.refreshControl = [[UIRefreshControl alloc] init];
+    self.refreshControl.tintColor = [UIColor colorWithHexString:@"222222"];
     [self.refreshControl addTarget:self action:@selector(loadData) forControlEvents:UIControlEventValueChanged];
     [self.collectionView addSubview:self.refreshControl];
     
@@ -66,8 +67,6 @@ NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
     self.navigationItem.title = @"Tasks";
     self.navigationController.navigationBar.tintColor = [UIColor blackColor];
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(new)];
-    
-    [self loadData];
 }
 
 #pragma mark - EHTasksViewController
@@ -80,6 +79,7 @@ NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
 - (void)loadData
 {
     __weak typeof(self) weakSelf = self;
+    
     [[RKObjectManager sharedManager] getObjectsAtPath:@"/tasks.json" parameters:nil success:^(RKObjectRequestOperation *operation, RKMappingResult *mappingResult) {
         [weakSelf.refreshControl endRefreshing];
         NSLog(@"Tasks loaded %@", [[mappingResult array] valueForKey:@"name"]);
@@ -143,7 +143,7 @@ NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
     EHTask *task = [self.fetchedResultsController objectAtIndexPath:indexPath];
-
+    
     EHTaskEditViewController *taskEditViewController = [[EHTaskEditViewController alloc] init];
     taskEditViewController.targetObject = task;
     taskEditViewController.managedObjectContext = self.managedObjectContext;

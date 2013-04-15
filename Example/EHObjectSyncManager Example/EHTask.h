@@ -17,6 +17,9 @@
 @property (nonatomic, retain) NSDate *completedAt;
 @property (nonatomic, retain) NSSet *reminders;
 
+// Derived Attributes
+@property (nonatomic, strong, readonly) NSString *dueAtString;
+@property (nonatomic, strong, readonly) NSString *completedAtString;
 @property (nonatomic, assign) BOOL completed;
 
 @end

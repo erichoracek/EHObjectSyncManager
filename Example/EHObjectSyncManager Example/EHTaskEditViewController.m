@@ -8,18 +8,22 @@
 
 #import "EHTaskEditViewController.h"
 #import "EHTask.h"
+#import "EHReminder.h"
+#import "EHReminderEditViewController.h"
+#import "EHDatePickerController.h"
 
 // Reuse Identifiers
 NSString *const EHTaskReuseIdentifierName = @"Name";
 NSString *const EHTaskReuseIdentifierDueDate = @"Due Date";
 NSString *const EHTaskReuseIdentifierComplete = @"Complete";
+NSString *const EHTaskReuseIdentifierNewReminder = @"New Reminder";
+NSString *const EHTaskReuseIdentifierReminder = @"Reminder";
 NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 
-@interface EHTaskEditViewController () <NSFetchedResultsControllerDelegate, UITextFieldDelegate>
+@interface EHTaskEditViewController () <UITextFieldDelegate>
 
-@property (nonatomic, strong) NSManagedObjectContext *privateContext;
-@property (nonatomic, strong) NSFetchedResultsController *fetchedResultsController;
 @property (nonatomic, strong) MSCollectionViewTableLayout *collectionViewLayout;
+@property (nonatomic, strong) EHDatePickerController *datePickerController;
 @property (nonatomic, strong, readonly) EHTask *task;
 
 - (void)prepareSections;
@@ -41,13 +45,32 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 {
     [super viewDidLoad];
     
+    [[PDDebugger defaultInstance] addManagedObjectContext:self.privateContext withName:@"EHTaskEditViewController Context"];
+    
+    self.datePickerController = [EHDatePickerController new];
+    [self.view addSubview:self.datePickerController.hiddenTextField];
+    __weak typeof (self) weakSelf = self;
+    self.datePickerController.completionBlock = ^(EHDatePickerControllerCompletionType completionType) {
+        switch (completionType) {
+            case EHDatePickerControllerCompletionTypeClear:
+                weakSelf.task.dueAt = nil;
+                break;
+            case EHDatePickerControllerCompletionTypeSave:
+                break;
+        }
+        [weakSelf prepareSections];
+        [weakSelf.collectionView reloadData];
+    };
+    self.datePickerController.dateChangedBlock = ^(NSDate *date) {
+        weakSelf.task.dueAt = date;
+    };
+    
     self.navigationItem.title = (self.task.isInserted ? @"New Task" : @"Edit Task");
     self.navigationController.navigationBar.tintColor = [UIColor blackColor];
     self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Cancel" style:UIBarButtonItemStylePlain target:self action:@selector(cancelObject)];
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Save" style:UIBarButtonItemStylePlain target:self action:@selector(saveObject)];
     
     self.collectionView.backgroundColor = [UIColor whiteColor];
-    
     [self prepareSections];
 }
 
@@ -58,8 +81,14 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
     return [NSEntityDescription entityForName:@"Task" inManagedObjectContext:context];
 }
 
+- (BOOL)objectExistsRemotely
+{
+    return (self.task.remoteID != nil);
+}
+
 - (void)didSaveObject
 {
+    [super didSaveObject];
     self.dismissBlock();
 }
 
@@ -98,6 +127,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 
 - (void)didCancelObject
 {
+    [super didCancelObject];
     self.dismissBlock();
 }
 
@@ -114,6 +144,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 
 - (void)didDeleteObject
 {
+    [super didDeleteObject];
     self.dismissBlock();
 }
 
@@ -156,18 +187,10 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
             MSTableClass : MSRightDetailGroupedTableViewCell.class,
             MSTableConfigurationBlock : ^(MSRightDetailGroupedTableViewCell *cell){
                 cell.title.text = @"Due";
-            if (weakSelf.task.dueAt) {
-                static NSDateFormatter *dateFormatter;
-                if (!dateFormatter) {
-                    dateFormatter = [[NSDateFormatter alloc] init];
-                    [dateFormatter setDateFormat:@"EEE, MMM d 'at' h:mm a"];
-                }
-                cell.detail.text = [dateFormatter stringFromDate:weakSelf.task.dueAt];
-            } else {
-                cell.detail.text = @"None";
-            }
+                cell.detail.text = weakSelf.task.dueAtString;
             },
             MSTableItemSelectionBlock : ^(NSIndexPath *indexPath) {
+                [weakSelf.datePickerController.hiddenTextField becomeFirstResponder];
             }
          }]
      }];
@@ -192,20 +215,78 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
          }]
      }];
     
-    // Delete
-    [sections addObject:@{
-        MSTableSectionRows : @[ @{
-            MSTableReuseIdentifer : EHTaskReuseIdentifierDelete,
-            MSTableClass : MSButtonGroupedTableViewCell.class,
-            MSTableConfigurationBlock : ^(MSButtonGroupedTableViewCell *cell){
-                cell.title.text = @"Delete";
-                cell.buttonBackgroundColor = [UIColor colorWithHexString:@"FFB3B3"];
+    // Reminders
+    {
+        NSMutableArray *rows = [NSMutableArray new];
+        
+        [rows addObject: @{
+            MSTableReuseIdentifer : EHTaskReuseIdentifierNewReminder,
+            MSTableClass : MSGroupedTableViewCell.class,
+            MSTableConfigurationBlock : ^(MSGroupedTableViewCell *cell){
+                cell.title.text = @"New Reminder";
+                cell.accessoryType = MSTableCellAccessoryDisclosureIndicator;
             },
             MSTableItemSelectionBlock : ^(NSIndexPath *indexPath) {
-                [weakSelf deleteObject];
+                EHReminderEditViewController *reminderEditViewController = [[EHReminderEditViewController alloc] init];
+                reminderEditViewController.task = weakSelf.task;
+                reminderEditViewController.managedObjectContext = weakSelf.privateContext;
+                reminderEditViewController.dismissBlock = ^{
+                    [weakSelf dismissViewControllerAnimated:YES completion:^{
+                        [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
+                    }];
+                };
+                UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:reminderEditViewController];
+                [weakSelf presentViewController:navigationController animated:YES completion:nil];
             }
-         }]
-     }];
+        }];
+        
+        for (EHReminder *reminder in self.task.reminders) {
+            [rows addObject: @{
+                MSTableReuseIdentifer : EHTaskReuseIdentifierReminder,
+                MSTableClass : MSGroupedTableViewCell.class,
+                MSTableConfigurationBlock : ^(MSGroupedTableViewCell *cell){
+                    cell.title.text = reminder.remindAtString;
+                    [cell setTitleTextAttributes:@{ UITextAttributeFont : [UIFont systemFontOfSize:17.0]} forState:UIControlStateNormal];
+                    cell.accessoryType = MSTableCellAccessoryDisclosureIndicator;
+                },
+                MSTableItemSelectionBlock : ^(NSIndexPath *indexPath) {
+                    EHReminderEditViewController *reminderEditViewController = [[EHReminderEditViewController alloc] init];
+                    reminderEditViewController.targetObject = reminder;
+                    reminderEditViewController.managedObjectContext = weakSelf.privateContext;
+                    reminderEditViewController.dismissBlock = ^{
+                        [weakSelf.navigationController popViewControllerAnimated:YES];
+                        double delayInSeconds = 0.3;
+                        dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+                        dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+                            [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
+                        });
+                    };
+                    [weakSelf.navigationController pushViewController:reminderEditViewController animated:YES];
+                }
+            }];
+        }
+        
+        [sections addObject:@{
+             MSTableSectionRows : rows
+        }];
+    }
+    
+    // Delete
+    if (!self.task.isInserted) {
+        [sections addObject:@{
+            MSTableSectionRows : @[ @{
+                MSTableReuseIdentifer : EHTaskReuseIdentifierDelete,
+                MSTableClass : MSButtonGroupedTableViewCell.class,
+                MSTableConfigurationBlock : ^(MSButtonGroupedTableViewCell *cell){
+                    cell.title.text = @"Delete";
+                    cell.buttonBackgroundColor = [UIColor colorWithHexString:@"FFB3B3"];
+                },
+                MSTableItemSelectionBlock : ^(NSIndexPath *indexPath) {
+                    [weakSelf deleteObject];
+                }
+            }]
+        }];
+    }
     
     self.collectionViewLayout.sections = sections;
 }
@@ -223,6 +304,21 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
     [self.view endEditing:YES];
     [self.collectionView deselectItemAtIndexPath:self.collectionView.indexPathsForSelectedItems[0] animated:YES];
     return NO;
+}
+
+#pragma mark - NSFetchedResultsControllerDelegate
+
+- (void)objectWasUpdated
+{
+    [super objectWasUpdated];
+    [self prepareSections];
+    [self.collectionView reloadData];
+}
+
+- (void)objectWasDeleted
+{
+    [super objectWasDeleted];
+//    self.dismissBlock();
 }
 
 @end

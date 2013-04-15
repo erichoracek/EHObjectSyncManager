@@ -65,9 +65,17 @@ typedef BOOL (^EHSyncDescriptorExistsRemotelyBlock)(NSManagedObject *managedObje
 
 @end
 
-@interface EHSyncRequestCleanupOperation : NSOperation
+@interface EHObjectSyncOperation : NSOperation
 
-@property (nonatomic, strong) NSOperation *requestOperation;
 @property (nonatomic, strong) NSString *objectIDStringURI;
+@property (nonatomic, strong) NSNumber *syncRequestMethod;
+@property (nonatomic, strong) Class syncClass;
+@property (nonatomic, strong) NSDate *syncDate;
+@property (nonatomic, strong) NSNumber *syncRank;
+
+@property (nonatomic, strong) NSManagedObject *syncObject;
+@property (nonatomic, strong) NSString *syncPath;
+
+@property (nonatomic, strong, readonly) NSOperation *syncRequestOperation;
 
 @end

@@ -17,4 +17,8 @@
 @property (nonatomic, retain) NSDate *remindAt;
 @property (nonatomic, retain) EHTask *task;
 
+// Derived Attributes
+@property (nonatomic, strong, readonly) NSString *remindAtString;
+@property (nonatomic, assign, readonly) BOOL fired;
+
 @end
