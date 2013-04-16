@@ -194,6 +194,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
                 cell.detail.text = weakSelf.task.dueAtString;
             },
             MSTableItemSelectionBlock : ^(NSIndexPath *indexPath) {
+                weakSelf.dueAtDatePickerController.datePicker.date = weakSelf.task.dueAt;
                 [weakSelf.dueAtDatePickerController.hiddenTextField becomeFirstResponder];
             }
          }]
