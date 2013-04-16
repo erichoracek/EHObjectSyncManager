@@ -179,7 +179,7 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
                 cell.detail.text = (weakSelf.reminder.remindAt ? weakSelf.reminder.remindAtString : @"None");
             },
             MSTableItemSelectionBlock : ^(NSIndexPath *indexPath) {
-                weakSelf.remindAtDatePickerController.datePicker.date = weakSelf.reminder.remindAt;
+                if (weakSelf.reminder.remindAt) weakSelf.remindAtDatePickerController.datePicker.date = weakSelf.reminder.remindAt;
                 [weakSelf.remindAtDatePickerController.hiddenTextField becomeFirstResponder];
             }
         }]
