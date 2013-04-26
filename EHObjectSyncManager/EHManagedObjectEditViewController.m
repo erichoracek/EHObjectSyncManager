@@ -188,17 +188,25 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
         self.disableMergeForNestedSave = YES;
         if ([self.privateContext saveToPersistentStore:&error]) {
             self.disableMergeForNestedSave = NO;
-            [self didSaveObject];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self didSaveObject];
+            });
         } else {
             self.disableMergeForNestedSave = NO;
-            [self didFailSaveObjectWithError:error];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self didFailSaveObjectWithError:error];
+            });
         }
     } else {
         [self.privateContext performBlockAndWait:^{
             if ([self.privateContext save:&error]) {
-                [self didSaveObject];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self didSaveObject];
+                });
             } else {
-                [self didFailSaveObjectWithError:error];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self didFailSaveObjectWithError:error];
+                });
             }
         }];
     }
@@ -232,17 +240,25 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
             self.disableMergeForNestedSave = YES;
             if ([self.privateContext saveToPersistentStore:&error]) {
                 self.disableMergeForNestedSave = NO;
-                [self didDeleteObject];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self didDeleteObject];
+                });
             } else {
                 self.disableMergeForNestedSave = NO;
-                [self didFailDeleteObjectWithError:error];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self didFailDeleteObjectWithError:error];
+                });
             }
         } else {
             [self.privateContext performBlockAndWait:^{
                 if ([self.privateContext save:&error]) {
-                    [self didDeleteObject];
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [self didDeleteObject];
+                    });
                 } else {
-                    [self didFailDeleteObjectWithError:error];
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [self didFailDeleteObjectWithError:error];
+                    });
                 }
             }];
         }
