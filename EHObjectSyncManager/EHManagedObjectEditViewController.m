@@ -163,7 +163,6 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 - (void)cancelObject
 {
     [self willCancelObjectWithChanges:[self.privateContext hasChanges] completion:^{
-        [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
         [self didCancelObject];
     }];
 }
@@ -180,7 +179,6 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 - (void)saveObject
 {
-    [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
     [self willSaveObject];
     __block NSError* error;
     if ([[EHObjectSyncManager sharedManager] managedObjectContext] == self.managedObjectContext) {
@@ -231,7 +229,6 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 - (void)deleteObject
 {
     [self willDeleteObjectWithCompletion:^{
-        [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
         [self.privateContext performBlockAndWait:^{
             [self.privateContext deleteObject:self.privateTargetObject];
         }];
