@@ -17,7 +17,6 @@
     // Pods
     #import <RestKit/RestKit.h>
     #import <MSTableKit/MSTableKit.h>
-    #import <FormatterKit/TTTTimeIntervalFormatter.h>
     #import <PonyDebugger/PonyDebugger.h>
     #import <A2DynamicDelegate/A2DynamicDelegate.h>
     #import <UIColor-Utilities/UIColor+Expanded.h>

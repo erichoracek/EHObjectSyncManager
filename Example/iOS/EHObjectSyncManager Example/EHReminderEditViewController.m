@@ -97,6 +97,8 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 
 - (void)didSaveObject
 {
+    [super didSaveObject];
+    [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
     self.dismissBlock();
 }
 
@@ -136,6 +138,7 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 - (void)didCancelObject
 {
     [super didCancelObject];
+    [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
     self.dismissBlock();
 }
 
@@ -154,6 +157,21 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 
 - (void)didDeleteObject
 {
+    [super didDeleteObject];
+    [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
+    self.dismissBlock();
+}
+
+- (void)objectWasUpdated
+{
+    [super objectWasUpdated];
+    [self prepareSections];
+    [self.collectionView reloadData];
+}
+
+- (void)objectWasDeleted
+{
+    [super objectWasDeleted];
     self.dismissBlock();
 }
 

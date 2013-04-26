@@ -1,0 +1,3 @@
+[submodule "Example/Rails"]
+	path = Example/Rails
+	url = git@github.com:eric-horacek/EHObjectSyncManager-Rails-Example.git

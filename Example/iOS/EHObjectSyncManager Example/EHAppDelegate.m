@@ -115,14 +115,13 @@
         RKPathMatcher *pathMatcher = [RKPathMatcher pathMatcherWithPattern:@"/tasks.json"];
         if (![pathMatcher matchesPath:[URL relativePath] tokenizeQueryStrings:NO parsedArguments:nil]) return nil;
         NSFetchRequest *fetchRequest = [NSFetchRequest fetchRequestWithEntityName:@"Task"];
-        fetchRequest.sortDescriptors = @[ [NSSortDescriptor sortDescriptorWithKey:@"completedAt" ascending:YES] ];
         return fetchRequest;
     }];
     
-    // A task index returns all reminders that have tasks
     [objectManager addFetchRequestBlock:^NSFetchRequest *(NSURL *URL) {
         RKPathMatcher *pathMatcher = [RKPathMatcher pathMatcherWithPattern:@"/tasks.json"];
         if (![pathMatcher matchesPath:[URL relativePath] tokenizeQueryStrings:NO parsedArguments:nil]) return nil;
+        // A task index returns all reminders that have tasks, these must be included
         NSFetchRequest *fetchRequest = [NSFetchRequest fetchRequestWithEntityName:@"Reminder"];
         fetchRequest.predicate = [NSPredicate predicateWithFormat:@"(task != nil)"];
         return fetchRequest;
@@ -133,7 +132,6 @@
         NSDictionary *argsDict = nil;
         if (![pathMatcher matchesPath:[URL relativePath] tokenizeQueryStrings:NO parsedArguments:&argsDict]) return nil;
         NSFetchRequest *fetchRequest = [NSFetchRequest fetchRequestWithEntityName:@"Reminder"];
-        fetchRequest.sortDescriptors = @[ [NSSortDescriptor sortDescriptorWithKey:@"remindAt" ascending:YES] ];
         if (argsDict[@"task_id"]) {
             fetchRequest.predicate = [NSPredicate predicateWithFormat:@"(task.remoteID == %@)", argsDict[@"task_id"]];
         }

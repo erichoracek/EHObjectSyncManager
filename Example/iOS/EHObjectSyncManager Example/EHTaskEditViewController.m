@@ -89,6 +89,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 - (void)didSaveObject
 {
     [super didSaveObject];
+    [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
     self.dismissBlock();
 }
 
@@ -128,6 +129,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 - (void)didCancelObject
 {
     [super didCancelObject];
+    [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
     self.dismissBlock();
 }
 
@@ -147,6 +149,20 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 - (void)didDeleteObject
 {
     [super didDeleteObject];
+    [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
+    self.dismissBlock();
+}
+
+- (void)objectWasUpdated
+{
+    [super objectWasUpdated];
+    [self prepareSections];
+    [self.collectionView reloadData];
+}
+
+- (void)objectWasDeleted
+{
+    [super objectWasDeleted];
     self.dismissBlock();
 }
 
@@ -308,20 +324,6 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
     [self.view endEditing:YES];
     [self.collectionView deselectItemAtIndexPath:self.collectionView.indexPathsForSelectedItems[0] animated:YES];
     return NO;
-}
-
-#pragma mark - NSFetchedResultsControllerDelegate
-
-- (void)objectWasUpdated
-{
-    [super objectWasUpdated];
-    [self.collectionView reloadData];
-}
-
-- (void)objectWasDeleted
-{
-    [super objectWasDeleted];
-//    self.dismissBlock();
 }
 
 @end
