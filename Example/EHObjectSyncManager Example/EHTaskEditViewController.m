@@ -55,7 +55,6 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
         if (completionType == EHDatePickerControllerCompletionTypeClear) {
             weakSelf.task.dueAt = nil;
         }
-        [weakSelf prepareSections];
         [weakSelf.collectionView reloadData];
     };
     self.dueAtDatePickerController.dateChangedBlock = ^(NSDate *date) {
@@ -316,7 +315,6 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 - (void)objectWasUpdated
 {
     [super objectWasUpdated];
-    [self prepareSections];
     [self.collectionView reloadData];
 }
 
