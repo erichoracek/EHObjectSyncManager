@@ -6,11 +6,9 @@ Pod::Spec.new do |s|
   s.author       = { 'Eric Horacek' => 'horacek.eric@gmail.com' }
   s.license      = 'MIT'
   s.platform     = :ios, '5.0'
-
+  
   s.source       = { :git => 'https://github.com/eric-horacek/EHObjectSyncManager.git', :tag => s.version.to_s }
-  s.source_files = 'EHObjectSyncManager/*.{h,m}'
+  s.source_files = s.name.to_s + '/*.{h,m}'
   
   s.requires_arc = true
-
-  s.dependency 'CupertinoYankee', '~> 0.1.1'
 end
