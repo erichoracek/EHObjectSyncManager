@@ -13,8 +13,8 @@ typedef NS_ENUM(NSUInteger, EHDatePickerControllerCompletionType) {
     EHDatePickerControllerCompletionTypeClear
 };
 
-typedef void (^dateChangedBlock)(NSDate *date);
-typedef void (^datePickerControllerCompletionBlock)(EHDatePickerControllerCompletionType completionType);
+typedef void (^EHDateChangedBlock)(NSDate *date);
+typedef void (^EHDatePickerControllerCompletionBlock)(EHDatePickerControllerCompletionType completionType);
 
 @interface EHDatePickerController : NSObject
 
@@ -22,7 +22,7 @@ typedef void (^datePickerControllerCompletionBlock)(EHDatePickerControllerComple
 @property (nonatomic, strong, readonly) UIDatePicker *datePicker;
 @property (nonatomic, strong, readonly) UIToolbar *accessoryToolbar;
 
-@property (nonatomic, strong) dateChangedBlock dateChangedBlock;
-@property (nonatomic, strong) datePickerControllerCompletionBlock completionBlock;
+@property (nonatomic, strong) EHDateChangedBlock dateChangedBlock;
+@property (nonatomic, strong) EHDatePickerControllerCompletionBlock completionBlock;
 
 @end
