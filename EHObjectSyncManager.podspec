@@ -11,4 +11,6 @@ Pod::Spec.new do |s|
   s.source_files = s.name.to_s + '/*.{h,m}'
   
   s.requires_arc = true
+
+  s.dependency 'RestKit'
 end
