@@ -67,7 +67,6 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
 
 - (void)configureSyncManagerWithManagedObjectStore:(RKManagedObjectStore *)managedObjectStore
 {
-#warning FIGURE OUT WHY THIS CAUSES SAVE NOTIFICATIONS TO HAVE ALL DELETED OBJECTS EVER
 //    self.managedObjectContext = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
 //    self.managedObjectContext.parentContext = managedObjectStore.persistentStoreManagedObjectContext;
 //    self.managedObjectContext.mergePolicy = NSMergeByPropertyStoreTrumpMergePolicy;
