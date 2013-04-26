@@ -137,6 +137,12 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
     [[RKObjectManager sharedManager] getObject:self.privateTargetObject path:nil parameters:nil success:^(RKObjectRequestOperation *operation, RKMappingResult *mappingResult) {
         [weakSelf didReloadObject];
     } failure:^(RKObjectRequestOperation *operation, NSError *error) {
+        if (operation.HTTPRequestOperation.response.statusCode == 404) {
+            [self.privateContext performBlockAndWait:^{
+                [self.privateContext deleteObject:self.privateTargetObject];
+            }];
+            [self saveObject];
+        }
         [weakSelf didFailReloadObjectWithError:error];
     }];
 }
@@ -150,7 +156,6 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 {
     
 }
-
 
 - (void)refreshTargetObject
 {
