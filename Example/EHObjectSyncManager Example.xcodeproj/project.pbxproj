@@ -42,6 +42,12 @@
 		3ABE7C1F170F240000996086 /* EHManagedObjectEditViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3ABE7C1E170F23FF00996086 /* EHManagedObjectEditViewController.m */; };
 		3AC70ADC171A1A6F00CBA034 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AC70ADB171A1A6F00CBA034 /* SystemConfiguration.framework */; };
 		3AC70ADE171A1A7500CBA034 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AC70ADD171A1A7500CBA034 /* MobileCoreServices.framework */; };
+		3ACAB11C172AE94600C8A821 /* Icon-72.png in Resources */ = {isa = PBXBuildFile; fileRef = 3ACAB116172AE94600C8A821 /* Icon-72.png */; };
+		3ACAB11D172AE94600C8A821 /* Icon-72@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3ACAB117172AE94600C8A821 /* Icon-72@2x.png */; };
+		3ACAB11E172AE94600C8A821 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 3ACAB118172AE94600C8A821 /* Icon.png */; };
+		3ACAB11F172AE94600C8A821 /* Icon@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3ACAB119172AE94600C8A821 /* Icon@2x.png */; };
+		3ACAB120172AE94600C8A821 /* iTunesArtwork.png in Resources */ = {isa = PBXBuildFile; fileRef = 3ACAB11A172AE94600C8A821 /* iTunesArtwork.png */; };
+		3ACAB121172AE94600C8A821 /* iTunesArtwork@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3ACAB11B172AE94600C8A821 /* iTunesArtwork@2x.png */; };
 		3AD3A19B1719DB0400455DB1 /* EHReminderEditViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AD3A19A1719DB0400455DB1 /* EHReminderEditViewController.m */; };
 /* End PBXBuildFile section */
 
@@ -49,7 +55,7 @@
 		25219DDC8E0B4249AD388DEB /* libPods.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPods.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A2CD7E6170B37D90050ABAC /* EHObjectSyncManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHObjectSyncManager.h; sourceTree = "<group>"; };
 		3A2CD7E7170B37D90050ABAC /* EHObjectSyncManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHObjectSyncManager.m; sourceTree = "<group>"; };
-		3A2ED97C170A248600E3FD02 /* EHObjectSyncManager Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "EHObjectSyncManager Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3A2ED97C170A248600E3FD02 /* EHOSM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EHOSM.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A2ED97F170A248600E3FD02 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		3A2ED981170A248600E3FD02 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		3A2ED983170A248600E3FD02 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -95,6 +101,12 @@
 		3ABE7C1E170F23FF00996086 /* EHManagedObjectEditViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHManagedObjectEditViewController.m; sourceTree = "<group>"; };
 		3AC70ADB171A1A6F00CBA034 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		3AC70ADD171A1A7500CBA034 /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
+		3ACAB116172AE94600C8A821 /* Icon-72.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-72.png"; sourceTree = "<group>"; };
+		3ACAB117172AE94600C8A821 /* Icon-72@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon-72@2x.png"; sourceTree = "<group>"; };
+		3ACAB118172AE94600C8A821 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		3ACAB119172AE94600C8A821 /* Icon@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Icon@2x.png"; sourceTree = "<group>"; };
+		3ACAB11A172AE94600C8A821 /* iTunesArtwork.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = iTunesArtwork.png; sourceTree = "<group>"; };
+		3ACAB11B172AE94600C8A821 /* iTunesArtwork@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "iTunesArtwork@2x.png"; sourceTree = "<group>"; };
 		3AD3A1991719DB0400455DB1 /* EHReminderEditViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHReminderEditViewController.h; sourceTree = "<group>"; };
 		3AD3A19A1719DB0400455DB1 /* EHReminderEditViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHReminderEditViewController.m; sourceTree = "<group>"; };
 		57F3CEB0228545DBADD74F3C /* Pods.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.xcconfig; path = Pods/Pods.xcconfig; sourceTree = SOURCE_ROOT; };
@@ -156,7 +168,7 @@
 		3A2ED97D170A248600E3FD02 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3A2ED97C170A248600E3FD02 /* EHObjectSyncManager Example.app */,
+				3A2ED97C170A248600E3FD02 /* EHOSM.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -205,6 +217,12 @@
 		3A2ED986170A248600E3FD02 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				3ACAB116172AE94600C8A821 /* Icon-72.png */,
+				3ACAB117172AE94600C8A821 /* Icon-72@2x.png */,
+				3ACAB118172AE94600C8A821 /* Icon.png */,
+				3ACAB119172AE94600C8A821 /* Icon@2x.png */,
+				3ACAB11A172AE94600C8A821 /* iTunesArtwork.png */,
+				3ACAB11B172AE94600C8A821 /* iTunesArtwork@2x.png */,
 				3AA2FD73171C6AA700230E35 /* ss-standard.ttf */,
 				3A2ED987170A248600E3FD02 /* EHObjectSyncManager Example-Info.plist */,
 				3A2ED988170A248600E3FD02 /* InfoPlist.strings */,
@@ -255,7 +273,7 @@
 			);
 			name = "EHObjectSyncManager Example";
 			productName = "EHObjectSyncManager Example";
-			productReference = 3A2ED97C170A248600E3FD02 /* EHObjectSyncManager Example.app */;
+			productReference = 3A2ED97C170A248600E3FD02 /* EHOSM.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -305,6 +323,12 @@
 				3AA2FD8E171C8DCF00230E35 /* ixPickerOverlaySectionsSeparator@2x.png in Resources */,
 				3AA2FD8F171C8DCF00230E35 /* ixPickerOverlaySectionWheel.png in Resources */,
 				3AA2FD90171C8DCF00230E35 /* ixPickerOverlaySectionWheel@2x.png in Resources */,
+				3ACAB11C172AE94600C8A821 /* Icon-72.png in Resources */,
+				3ACAB11D172AE94600C8A821 /* Icon-72@2x.png in Resources */,
+				3ACAB11E172AE94600C8A821 /* Icon.png in Resources */,
+				3ACAB11F172AE94600C8A821 /* Icon@2x.png in Resources */,
+				3ACAB120172AE94600C8A821 /* iTunesArtwork.png in Resources */,
+				3ACAB121172AE94600C8A821 /* iTunesArtwork@2x.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -491,7 +515,7 @@
 					"-framework",
 					SystemConfiguration,
 				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = EHOSM;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -524,7 +548,7 @@
 					"-framework",
 					SystemConfiguration,
 				);
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = EHOSM;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
