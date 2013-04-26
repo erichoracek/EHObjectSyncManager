@@ -174,7 +174,7 @@
     [debugger enableNetworkTrafficDebugging];
     [debugger forwardAllNetworkTraffic];
     
-    [debugger enableViewHierarchyDebugging];
+//    [debugger enableViewHierarchyDebugging];
     
     [debugger enableCoreDataDebugging];
     [debugger addManagedObjectContext:[[RKManagedObjectStore defaultStore] persistentStoreManagedObjectContext] withName:@"RKManagedObjectStore Persistent Store"];
