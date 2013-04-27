@@ -75,7 +75,7 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
     // Prepare a fetch request to monitor the target object
     NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] init];
     fetchRequest.fetchLimit = 1;
-    fetchRequest.sortDescriptors = @[ ];
+    fetchRequest.sortDescriptors = @[ ]; // Required by NSFetchedResultsController
     fetchRequest.entity = [self entityInContext:self.privateContext];
     fetchRequest.predicate = [NSPredicate predicateWithFormat:@"(SELF == %@)", self.privateTargetObject];
     self.fetchedResultsController = [[NSFetchedResultsController alloc] initWithFetchRequest:fetchRequest managedObjectContext:self.privateContext sectionNameKeyPath:nil cacheName:nil];
@@ -101,6 +101,15 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 - (void)savePrivateContextWithCompletion:(void (^)(BOOL success, NSError *error))completion
 {
+    // Prevent fetched results controller delegate callbacks during our private context's save
+    self.fetchedResultsController.delegate = nil;
+    
+    void(^internalCompletion)(BOOL success, NSError *error) = ^(BOOL success, NSError *error) {
+        if (completion) completion(success, error);
+        // Re-enable fetched results controller delegate callbacks during our private context's save
+        self.fetchedResultsController.delegate = self;
+    };
+    
     __block NSError* error;
     __block BOOL success;
     if ([[EHObjectSyncManager sharedManager] managedObjectContext] == self.managedObjectContext) {
@@ -114,7 +123,7 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
         }];
     }
     dispatch_async(dispatch_get_main_queue(), ^{
-        completion(success, error);
+        internalCompletion(success, error);
     });
 }
 
@@ -257,12 +266,12 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 - (void)didDeleteObject
 {
-    
+    NSLog(@"Successfully deleted (%@)", self.targetObject.objectID);
 }
 
 - (void)didFailDeleteObjectWithError:(NSError *)error
 {
-    
+    NSLog(@"Failed to delete %@ with error %@", self.targetObject.objectID, [error debugDescription]);
 }
 
 - (void)objectWasDeleted
