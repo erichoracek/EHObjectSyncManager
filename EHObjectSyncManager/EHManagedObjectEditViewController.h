@@ -45,11 +45,8 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 - (void)didDeleteObject;
 - (void)didFailDeleteObjectWithError:(NSError *)error;
 
-// Object Updates (As observed by the NSFetchedResultsController)
+// Object Updates (As observed by an internal NSFetchedResultsController)
 - (void)objectWasUpdated;
 - (void)objectWasDeleted;
-
-- (void)obtainPermanentIdsForInsertedObjects;
-- (void)refreshTargetObject;
 
 @end

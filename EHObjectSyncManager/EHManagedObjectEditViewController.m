@@ -21,6 +21,8 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 - (void)handleManagedObjectContextDidSaveNotification:(NSNotification *)notification;
 - (void)savePrivateContextWithCompletion:(void (^)(BOOL success, NSError *error))completion;
+- (void)obtainPermanentIdsForInsertedObjects;
+- (void)refreshTargetObject;
 
 @end
 
