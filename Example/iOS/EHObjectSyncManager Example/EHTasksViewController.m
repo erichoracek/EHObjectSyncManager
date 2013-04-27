@@ -95,7 +95,6 @@ NSString * const EHEtchReuseIdentifier = @"EHEtchReuseIdentifier";
     
     [[RKObjectManager sharedManager] getObjectsAtPath:@"/tasks.json" parameters:nil success:^(RKObjectRequestOperation *operation, RKMappingResult *mappingResult) {
         [weakSelf.refreshControl endRefreshing];
-        NSLog(@"Tasks loaded %@", [[mappingResult array] valueForKey:@"name"]);
     } failure:^(RKObjectRequestOperation *operation, NSError *error) {
         [weakSelf.refreshControl endRefreshing];
         NSLog(@"Task load failed with error: %@", error);
