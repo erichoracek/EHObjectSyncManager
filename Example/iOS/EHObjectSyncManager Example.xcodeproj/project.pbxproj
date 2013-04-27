@@ -23,7 +23,6 @@
 		3A2ED9AA170A477900E3FD02 /* EHReminder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A2ED9A9170A477900E3FD02 /* EHReminder.m */; };
 		3AA2FD70171BAC4000230E35 /* EHDatePickerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AA2FD6F171BAC4000230E35 /* EHDatePickerController.m */; };
 		3AA2FD72171C650700230E35 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AA2FD71171C650700230E35 /* QuartzCore.framework */; };
-		3AA2FD74171C6AA700230E35 /* ss-standard.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3AA2FD73171C6AA700230E35 /* ss-standard.ttf */; };
 		3AA2FD77171C6D4C00230E35 /* EHStyleManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AA2FD76171C6D4B00230E35 /* EHStyleManager.m */; };
 		3AA2FD87171C8DCF00230E35 /* ixPickerOverlayGlass.png in Resources */ = {isa = PBXBuildFile; fileRef = 3AA2FD79171C8DCF00230E35 /* ixPickerOverlayGlass.png */; };
 		3AA2FD88171C8DCF00230E35 /* ixPickerOverlayGlass@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3AA2FD7A171C8DCF00230E35 /* ixPickerOverlayGlass@2x.png */; };
@@ -47,6 +46,7 @@
 		3ACAB120172AE94600C8A821 /* iTunesArtwork.png in Resources */ = {isa = PBXBuildFile; fileRef = 3ACAB11A172AE94600C8A821 /* iTunesArtwork.png */; };
 		3ACAB121172AE94600C8A821 /* iTunesArtwork@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3ACAB11B172AE94600C8A821 /* iTunesArtwork@2x.png */; };
 		3AD3A19B1719DB0400455DB1 /* EHReminderEditViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AD3A19A1719DB0400455DB1 /* EHReminderEditViewController.m */; };
+		3AE36C7A172C509500289B05 /* ss-standard.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3AE36C79172C509500289B05 /* ss-standard.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -74,7 +74,6 @@
 		3AA2FD6E171BAC4000230E35 /* EHDatePickerController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHDatePickerController.h; sourceTree = "<group>"; };
 		3AA2FD6F171BAC4000230E35 /* EHDatePickerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHDatePickerController.m; sourceTree = "<group>"; };
 		3AA2FD71171C650700230E35 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
-		3AA2FD73171C6AA700230E35 /* ss-standard.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "ss-standard.ttf"; path = "../../../../Design/Fonts/ss-standard/webfonts/ss-standard.ttf"; sourceTree = "<group>"; };
 		3AA2FD75171C6D4B00230E35 /* EHStyleManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHStyleManager.h; sourceTree = "<group>"; };
 		3AA2FD76171C6D4B00230E35 /* EHStyleManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHStyleManager.m; sourceTree = "<group>"; };
 		3AA2FD79171C8DCF00230E35 /* ixPickerOverlayGlass.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ixPickerOverlayGlass.png; sourceTree = "<group>"; };
@@ -103,6 +102,7 @@
 		3ACAB11B172AE94600C8A821 /* iTunesArtwork@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "iTunesArtwork@2x.png"; sourceTree = "<group>"; };
 		3AD3A1991719DB0400455DB1 /* EHReminderEditViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHReminderEditViewController.h; sourceTree = "<group>"; };
 		3AD3A19A1719DB0400455DB1 /* EHReminderEditViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHReminderEditViewController.m; sourceTree = "<group>"; };
+		3AE36C79172C509500289B05 /* ss-standard.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ss-standard.ttf"; sourceTree = "<group>"; };
 		57F3CEB0228545DBADD74F3C /* Pods.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = Pods.xcconfig; path = Pods/Pods.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -189,13 +189,13 @@
 		3A2ED986170A248600E3FD02 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				3AE36C79172C509500289B05 /* ss-standard.ttf */,
 				3ACAB116172AE94600C8A821 /* Icon-72.png */,
 				3ACAB117172AE94600C8A821 /* Icon-72@2x.png */,
 				3ACAB118172AE94600C8A821 /* Icon.png */,
 				3ACAB119172AE94600C8A821 /* Icon@2x.png */,
 				3ACAB11A172AE94600C8A821 /* iTunesArtwork.png */,
 				3ACAB11B172AE94600C8A821 /* iTunesArtwork@2x.png */,
-				3AA2FD73171C6AA700230E35 /* ss-standard.ttf */,
 				3A2ED987170A248600E3FD02 /* EHObjectSyncManager Example-Info.plist */,
 				3A2ED988170A248600E3FD02 /* InfoPlist.strings */,
 				3A2ED98B170A248600E3FD02 /* main.m */,
@@ -309,7 +309,6 @@
 				3A2ED992170A248600E3FD02 /* Default.png in Resources */,
 				3A2ED994170A248600E3FD02 /* Default@2x.png in Resources */,
 				3A2ED996170A248600E3FD02 /* Default-568h@2x.png in Resources */,
-				3AA2FD74171C6AA700230E35 /* ss-standard.ttf in Resources */,
 				3AA2FD87171C8DCF00230E35 /* ixPickerOverlayGlass.png in Resources */,
 				3AA2FD88171C8DCF00230E35 /* ixPickerOverlayGlass@2x.png in Resources */,
 				3AA2FD89171C8DCF00230E35 /* ixPickerOverlayLeftPane.png in Resources */,
@@ -326,6 +325,7 @@
 				3ACAB11F172AE94600C8A821 /* Icon@2x.png in Resources */,
 				3ACAB120172AE94600C8A821 /* iTunesArtwork.png in Resources */,
 				3ACAB121172AE94600C8A821 /* iTunesArtwork@2x.png in Resources */,
+				3AE36C7A172C509500289B05 /* ss-standard.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
