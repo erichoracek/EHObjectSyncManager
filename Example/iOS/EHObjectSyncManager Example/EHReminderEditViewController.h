@@ -13,7 +13,7 @@
 @interface EHReminderEditViewController : EHManagedObjectEditViewController
 
 @property (nonatomic, strong) UICollectionView *collectionView;
-@property (nonatomic, strong) void(^dismissBlock)();
+@property (nonatomic, strong) void(^dismissBlock)(BOOL animated);
 @property (nonatomic, strong) EHTask *task;
 
 @end

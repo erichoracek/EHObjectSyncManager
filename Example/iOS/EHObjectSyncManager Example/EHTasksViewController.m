@@ -74,8 +74,8 @@ NSString * const EHEtchReuseIdentifier = @"EHEtchReuseIdentifier";
     self.navigationItem.rightBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"+" action:^{
         EHTaskEditViewController *taskEditViewController = [[EHTaskEditViewController alloc] init];
         taskEditViewController.managedObjectContext = weakSelf.managedObjectContext;
-        taskEditViewController.dismissBlock = ^{
-            [weakSelf dismissViewControllerAnimated:YES completion:nil];
+        taskEditViewController.dismissBlock = ^(BOOL animated){
+            [weakSelf dismissViewControllerAnimated:animated completion:nil];
         };
         UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:taskEditViewController];
         [weakSelf presentViewController:navigationController animated:YES completion:nil];
@@ -134,8 +134,8 @@ NSString * const EHEtchReuseIdentifier = @"EHEtchReuseIdentifier";
     taskEditViewController.targetObject = task;
     taskEditViewController.managedObjectContext = self.managedObjectContext;
     __weak typeof (self) weakSelf = self;
-    taskEditViewController.dismissBlock = ^{
-        [weakSelf.navigationController popViewControllerAnimated:YES];
+    taskEditViewController.dismissBlock = ^(BOOL animated){
+        [weakSelf.navigationController popViewControllerAnimated:animated];
     };
     
     [self.navigationController pushViewController:taskEditViewController animated:YES];

@@ -90,7 +90,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 {
     [super didSaveObject];
     [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
-    self.dismissBlock();
+    self.dismissBlock(YES);
 }
 
 - (void)didFailSaveObjectWithError:(NSError *)error
@@ -115,8 +115,8 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
     if (changes) {
         NSString *message = [NSString stringWithFormat:@"Are you sure you want to cancel %@ this task? You will lose all unsaved changes.", (self.task.isInserted ? @"adding" : @"editing")];
         UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:message];
-        [alert addButtonWithTitle:@"Yes" handler:^{ completion(); }];
         [alert addButtonWithTitle:@"No" handler:nil];
+        [alert addButtonWithTitle:@"Yes" handler:^{ completion(); }];
         [alert show];
     } else {
         completion();
@@ -127,18 +127,18 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 {
     [super didCancelObject];
     [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
-    self.dismissBlock();
+    self.dismissBlock(YES);
 }
 
 - (void)willDeleteObjectWithCompletion:(void (^)(void))completion
 {
     UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:@"Are you sure you want to delete this task?"];
     __weak typeof (self) weakSelf = self;
+    [alert addButtonWithTitle:@"No" handler:nil];
     [alert addButtonWithTitle:@"Yes" handler:^{
         [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
         completion();
     }];
-    [alert addButtonWithTitle:@"No" handler:nil];
     [alert show];
 }
 
@@ -146,7 +146,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 {
     [super didDeleteObject];
     [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
-    self.dismissBlock();
+    self.dismissBlock(YES);
 }
 
 - (void)objectWasUpdated
@@ -159,7 +159,11 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 - (void)objectWasDeleted
 {
     [super objectWasDeleted];
-    self.dismissBlock();
+    [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
+    UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:@"This task was deleted on another device."];
+    __weak typeof (self) weakSelf = self;
+    [alert addButtonWithTitle:@"Continue" handler:^{ weakSelf.dismissBlock(YES); }];
+    [alert show];
 }
 
 #pragma mark - EHTaskEditViewController
@@ -246,8 +250,8 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
                 EHReminderEditViewController *reminderEditViewController = [[EHReminderEditViewController alloc] init];
                 reminderEditViewController.task = weakSelf.task;
                 reminderEditViewController.managedObjectContext = weakSelf.privateContext;
-                reminderEditViewController.dismissBlock = ^{
-                    [weakSelf dismissViewControllerAnimated:YES completion:^{
+                reminderEditViewController.dismissBlock = ^(BOOL animated){
+                    [weakSelf dismissViewControllerAnimated:animated completion:^{
                         [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
                     }];
                 };
@@ -269,8 +273,8 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
                     EHReminderEditViewController *reminderEditViewController = [[EHReminderEditViewController alloc] init];
                     reminderEditViewController.targetObject = reminder;
                     reminderEditViewController.managedObjectContext = weakSelf.privateContext;
-                    reminderEditViewController.dismissBlock = ^{
-                        [weakSelf.navigationController popViewControllerAnimated:YES];
+                    reminderEditViewController.dismissBlock = ^(BOOL animated){
+                        [weakSelf.navigationController popViewControllerAnimated:animated];
                         double delayInSeconds = 0.3;
                         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
                         dispatch_after(popTime, dispatch_get_main_queue(), ^(void){

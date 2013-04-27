@@ -99,7 +99,7 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 {
     [super didSaveObject];
     [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
-    self.dismissBlock();
+    self.dismissBlock(YES);
 }
 
 - (void)didFailSaveObjectWithError:(NSError *)error
@@ -123,8 +123,8 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
     if (changes) {        
         NSString *message = [NSString stringWithFormat:@"Are you sure you want to cancel %@ this reminder? You will lose all unsaved changes.", (self.reminder.isInserted ? @"adding" : @"editing")];
         UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:message];
-        [alert addButtonWithTitle:@"Yes" handler:^{ completion(); }];
         [alert addButtonWithTitle:@"No" handler:nil];
+        [alert addButtonWithTitle:@"Yes" handler:^{ completion(); }];
         [alert show];
     } else {
         completion();
@@ -135,18 +135,18 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 {
     [super didCancelObject];
     [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
-    self.dismissBlock();
+    self.dismissBlock(YES);
 }
 
 - (void)willDeleteObjectWithCompletion:(void (^)(void))completion
 {
     UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:@"Are you sure you want to delete this reminder?"];
     __weak typeof (self) weakSelf = self;
+    [alert addButtonWithTitle:@"No" handler:nil];
     [alert addButtonWithTitle:@"Yes" handler:^{
         [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
         completion();
     }];
-    [alert addButtonWithTitle:@"No" handler:nil];
     [alert show];
 }
 
@@ -154,7 +154,7 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 {
     [super didDeleteObject];
     [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
-    self.dismissBlock();
+    self.dismissBlock(YES);
 }
 
 - (void)objectWasUpdated
@@ -167,7 +167,11 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 - (void)objectWasDeleted
 {
     [super objectWasDeleted];
-    self.dismissBlock();
+    [[PDDebugger defaultInstance] removeManagedObjectContext:self.privateContext];
+    UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:@"This reminder was deleted on another device."];
+    __weak typeof (self) weakSelf = self;
+    [alert addButtonWithTitle:@"Continue" handler:^{ weakSelf.dismissBlock(YES); }];
+    [alert show];
 }
 
 #pragma mark - EHReminderEditViewController

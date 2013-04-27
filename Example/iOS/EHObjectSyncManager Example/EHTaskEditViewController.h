@@ -12,6 +12,6 @@
 @interface EHTaskEditViewController : EHManagedObjectEditViewController
 
 @property (nonatomic, strong) UICollectionView *collectionView;
-@property (nonatomic, strong) void(^dismissBlock)();
+@property (nonatomic, strong) void(^dismissBlock)(BOOL animated);
 
 @end
