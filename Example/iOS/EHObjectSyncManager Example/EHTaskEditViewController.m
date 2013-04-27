@@ -114,12 +114,9 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 {
     if (changes) {
         NSString *message = [NSString stringWithFormat:@"Are you sure you want to cancel %@ this task? You will lose all unsaved changes.", (self.task.isInserted ? @"adding" : @"editing")];
-        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Warning" message:message delegate:nil cancelButtonTitle:@"No" otherButtonTitles:@"Yes", nil];
-        A2DynamicDelegate *dynamicDelegate = alert.dynamicDelegate;
-        [dynamicDelegate implementMethod:@selector(alertView:didDismissWithButtonIndex:) withBlock:^(UIAlertView *alertView, NSInteger buttonIndex) {
-            if (buttonIndex == 1) completion();
-        }];
-        alert.delegate = dynamicDelegate;
+        UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:message];
+        [alert addButtonWithTitle:@"Yes" handler:^{ completion(); }];
+        [alert addButtonWithTitle:@"No" handler:nil];
         [alert show];
     } else {
         completion();
@@ -135,14 +132,13 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 
 - (void)willDeleteObjectWithCompletion:(void (^)(void))completion
 {
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Warning" message:@"Are you sure you want to delete this task?" delegate:nil cancelButtonTitle:@"No" otherButtonTitles:@"Yes", nil];
-    A2DynamicDelegate *dynamicDelegate = alert.dynamicDelegate;
+    UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:@"Are you sure you want to delete this task?"];
     __weak typeof (self) weakSelf = self;
-    [dynamicDelegate implementMethod:@selector(alertView:didDismissWithButtonIndex:) withBlock:^(UIAlertView *alertView, NSInteger buttonIndex) {
+    [alert addButtonWithTitle:@"Yes" handler:^{
         [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
-        if (buttonIndex == 1) completion();
+        completion();
     }];
-    alert.delegate = dynamicDelegate;
+    [alert addButtonWithTitle:@"No" handler:nil];
     [alert show];
 }
 
@@ -170,7 +166,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 
 - (EHTask *)task
 {
-    return self.fetchedResultsController.fetchedObjects[0];
+    return (self.fetchedResultsController.fetchedObjects.count ? self.fetchedResultsController.fetchedObjects[0] : nil);
 }
 
 - (void)prepareSections

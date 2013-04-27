@@ -112,8 +112,7 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
             NSLog(@"Error: %@", [detailedError debugDescription]);
             [errorDescription appendFormat:@"%@. ", [detailedError localizedDescription]];
         }
-    }
-    else {
+    } else {
         [errorDescription appendFormat:@"%@.", [error localizedDescription]];
     }
     [[[UIAlertView alloc] initWithTitle:@"Unable to Save Reminder" message:errorDescription delegate:nil cancelButtonTitle:@"Continue" otherButtonTitles:nil] show];
@@ -121,14 +120,11 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 
 - (void)willCancelObjectWithChanges:(BOOL)changes completion:(void (^)(void))completion
 {
-    if (changes) {
+    if (changes) {        
         NSString *message = [NSString stringWithFormat:@"Are you sure you want to cancel %@ this reminder? You will lose all unsaved changes.", (self.reminder.isInserted ? @"adding" : @"editing")];
-        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Warning" message:message delegate:nil cancelButtonTitle:@"No" otherButtonTitles:@"Yes", nil];
-        A2DynamicDelegate *dynamicDelegate = alert.dynamicDelegate;
-        [dynamicDelegate implementMethod:@selector(alertView:didDismissWithButtonIndex:) withBlock:^(UIAlertView *alertView, NSInteger buttonIndex) {
-            if (buttonIndex == 1) completion();
-        }];
-        alert.delegate = dynamicDelegate;
+        UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:message];
+        [alert addButtonWithTitle:@"Yes" handler:^{ completion(); }];
+        [alert addButtonWithTitle:@"No" handler:nil];
         [alert show];
     } else {
         completion();
@@ -144,14 +140,13 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 
 - (void)willDeleteObjectWithCompletion:(void (^)(void))completion
 {
-    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Warning" message:@"Are you sure you want to delete this reminder?" delegate:nil cancelButtonTitle:@"No" otherButtonTitles:@"Yes", nil];
-    A2DynamicDelegate *dynamicDelegate = alert.dynamicDelegate;
+    UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:@"Are you sure you want to delete this reminder?"];
     __weak typeof (self) weakSelf = self;
-    [dynamicDelegate implementMethod:@selector(alertView:didDismissWithButtonIndex:) withBlock:^(UIAlertView *alertView, NSInteger buttonIndex) {
+    [alert addButtonWithTitle:@"Yes" handler:^{
         [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
-        if (buttonIndex == 1) completion();
+        completion();
     }];
-    alert.delegate = dynamicDelegate;
+    [alert addButtonWithTitle:@"No" handler:nil];
     [alert show];
 }
 
@@ -179,7 +174,7 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
 
 - (EHReminder *)reminder
 {
-    return self.fetchedResultsController.fetchedObjects[0];
+    return (self.fetchedResultsController.fetchedObjects.count ? self.fetchedResultsController.fetchedObjects[0] : nil);
 }
 
 - (void)prepareSections
