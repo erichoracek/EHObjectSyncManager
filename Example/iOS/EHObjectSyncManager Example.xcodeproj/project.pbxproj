@@ -21,6 +21,7 @@
 		3A2ED9A4170A453B00E3FD02 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 3A2ED9A2170A453B00E3FD02 /* Model.xcdatamodeld */; };
 		3A2ED9A7170A477200E3FD02 /* EHTask.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A2ED9A6170A477200E3FD02 /* EHTask.m */; };
 		3A2ED9AA170A477900E3FD02 /* EHReminder.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A2ED9A9170A477900E3FD02 /* EHReminder.m */; };
+		3A9BBA70172C54BC00B7AC55 /* MessageUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A9BBA6F172C54BC00B7AC55 /* MessageUI.framework */; };
 		3AA2FD70171BAC4000230E35 /* EHDatePickerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AA2FD6F171BAC4000230E35 /* EHDatePickerController.m */; };
 		3AA2FD72171C650700230E35 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AA2FD71171C650700230E35 /* QuartzCore.framework */; };
 		3AA2FD77171C6D4C00230E35 /* EHStyleManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AA2FD76171C6D4B00230E35 /* EHStyleManager.m */; };
@@ -71,6 +72,7 @@
 		3A2ED9A6170A477200E3FD02 /* EHTask.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHTask.m; sourceTree = "<group>"; };
 		3A2ED9A8170A477900E3FD02 /* EHReminder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHReminder.h; sourceTree = "<group>"; };
 		3A2ED9A9170A477900E3FD02 /* EHReminder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHReminder.m; sourceTree = "<group>"; };
+		3A9BBA6F172C54BC00B7AC55 /* MessageUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MessageUI.framework; path = System/Library/Frameworks/MessageUI.framework; sourceTree = SDKROOT; };
 		3AA2FD6E171BAC4000230E35 /* EHDatePickerController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHDatePickerController.h; sourceTree = "<group>"; };
 		3AA2FD6F171BAC4000230E35 /* EHDatePickerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHDatePickerController.m; sourceTree = "<group>"; };
 		3AA2FD71171C650700230E35 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
@@ -111,6 +113,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3A9BBA70172C54BC00B7AC55 /* MessageUI.framework in Frameworks */,
 				3AA2FD72171C650700230E35 /* QuartzCore.framework in Frameworks */,
 				3AC70ADE171A1A7500CBA034 /* MobileCoreServices.framework in Frameworks */,
 				3AC70ADC171A1A6F00CBA034 /* SystemConfiguration.framework in Frameworks */,
@@ -157,6 +160,7 @@
 		3A2ED97E170A248600E3FD02 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				3A9BBA6F172C54BC00B7AC55 /* MessageUI.framework */,
 				3AA2FD71171C650700230E35 /* QuartzCore.framework */,
 				3A2ED97F170A248600E3FD02 /* UIKit.framework */,
 				3A2ED981170A248600E3FD02 /* Foundation.framework */,
