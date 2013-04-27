@@ -20,6 +20,7 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 @property (nonatomic, assign) BOOL disableMergeForNestedSave;
 
 - (void)handleManagedObjectContextDidSaveNotification:(NSNotification *)notification;
+- (void)savePrivateContextWithCompletion:(void (^)(BOOL success, NSError *error))completion;
 
 @end
 
@@ -98,6 +99,25 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
     }];
 }
 
+- (void)savePrivateContextWithCompletion:(void (^)(BOOL success, NSError *error))completion
+{
+    __block NSError* error;
+    __block BOOL success;
+    if ([[EHObjectSyncManager sharedManager] managedObjectContext] == self.managedObjectContext) {
+        [self obtainPermanentIdsForInsertedObjects];
+        self.disableMergeForNestedSave = YES;
+        success = [self.privateContext saveToPersistentStore:&error];
+        self.disableMergeForNestedSave = NO;
+    } else {
+        [self.privateContext performBlockAndWait:^{
+            success = [self.privateContext save:&error];
+        }];
+    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        completion(success, error);
+    });
+}
+
 - (NSEntityDescription *)entityInContext:(NSManagedObjectContext *)context;
 {
     NSAssert(NO, @"Subclasses should override this method");
@@ -138,10 +158,13 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
         [weakSelf didReloadObject];
     } failure:^(RKObjectRequestOperation *operation, NSError *error) {
         if (operation.HTTPRequestOperation.response.statusCode == 404) {
+            NSLog(@"Received 404 for managed object, deleting...");
             [self.privateContext performBlockAndWait:^{
                 [self.privateContext deleteObject:self.privateTargetObject];
             }];
-            [self saveObject];
+            [self savePrivateContextWithCompletion:^(BOOL success, NSError *error) {
+                if (!success) NSLog(@"Failed to delete object in private context with error %@", error);
+            }];
         }
         [weakSelf didFailReloadObjectWithError:error];
     }];
@@ -185,35 +208,14 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 - (void)saveObject
 {
     [self willSaveObject];
-    __block NSError* error;
-    if ([[EHObjectSyncManager sharedManager] managedObjectContext] == self.managedObjectContext) {
-        [self obtainPermanentIdsForInsertedObjects];
-        self.disableMergeForNestedSave = YES;
-        if ([self.privateContext saveToPersistentStore:&error]) {
-            self.disableMergeForNestedSave = NO;
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self didSaveObject];
-            });
+    [self savePrivateContextWithCompletion:^(BOOL success, NSError *error) {
+        if (success) {
+            [self didSaveObject];
         } else {
-            self.disableMergeForNestedSave = NO;
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self didFailSaveObjectWithError:error];
-            });
+            [self didFailSaveObjectWithError:error];
         }
-    } else {
-        [self.privateContext performBlockAndWait:^{
-            if ([self.privateContext save:&error]) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self didSaveObject];
-                });
-            } else {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self didFailSaveObjectWithError:error];
-                });
-            }
-        }];
-    }
-    [self refreshTargetObject];
+        [self refreshTargetObject];
+    }];
 }
 
 - (void)willSaveObject
@@ -237,34 +239,14 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
         [self.privateContext performBlockAndWait:^{
             [self.privateContext deleteObject:self.privateTargetObject];
         }];
-        __block NSError *error = nil;
-        if ([[EHObjectSyncManager sharedManager] managedObjectContext] == self.managedObjectContext) {
-            self.disableMergeForNestedSave = YES;
-            if ([self.privateContext saveToPersistentStore:&error]) {
-                self.disableMergeForNestedSave = NO;
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self didDeleteObject];
-                });
+        [self savePrivateContextWithCompletion:^(BOOL success, NSError *error) {
+            if (success) {
+                [self didDeleteObject];
             } else {
-                self.disableMergeForNestedSave = NO;
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self didFailDeleteObjectWithError:error];
-                });
+                [self didFailDeleteObjectWithError:error];
             }
-        } else {
-            [self.privateContext performBlockAndWait:^{
-                if ([self.privateContext save:&error]) {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        [self didDeleteObject];
-                    });
-                } else {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        [self didFailDeleteObjectWithError:error];
-                    });
-                }
-            }];
-        }
-        [self refreshTargetObject];
+            [self refreshTargetObject];
+        }];
     }];
 }
 
