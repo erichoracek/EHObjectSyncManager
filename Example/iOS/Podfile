@@ -2,13 +2,13 @@ platform :ios, '6.0'
 
 xcodeproj 'EHObjectSyncManager Example'
 
-pod 'PonyDebugger', '0.2.1beta1'
-pod 'BlocksKit',    '~> 1.8.2'
+pod 'EHObjectSyncManager',  :local => '../../'
+pod 'PonyDebugger',         '0.2.1beta1'
+pod 'BlocksKit',            '~> 1.8.2'
 
 # Monospace Pods
 # pod 'MSTableKit',             :git => 'https://github.com/monospacecollective/MSTableKit.git', :branch => 'development'
 pod 'UIView-Autolayout',      :git => 'https://github.com/eric-horacek/UIView-Autolayout'
 
 # Local
-pod 'EHObjectSyncManager',  :local => '../../'
 pod 'MSTableKit',           :local => '~/Development/MSTableKit'
