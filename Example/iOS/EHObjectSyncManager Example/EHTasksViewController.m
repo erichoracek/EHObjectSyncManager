@@ -71,7 +71,7 @@ NSString * const EHEtchReuseIdentifier = @"EHEtchReuseIdentifier";
     self.navigationItem.title = @"Tasks";
     
     __weak typeof (self) weakSelf = self;
-    self.navigationItem.rightBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"+" action:^{
+    self.navigationItem.rightBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"+" action:^(id sender) {
         EHTaskEditViewController *taskEditViewController = [[EHTaskEditViewController alloc] init];
         taskEditViewController.managedObjectContext = weakSelf.managedObjectContext;
         taskEditViewController.dismissBlock = ^(BOOL animated){

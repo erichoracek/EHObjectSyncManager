@@ -32,10 +32,10 @@
         self.accessoryToolbar.tintColor = [UIColor blackColor];
         
         __weak typeof (self) weakSelf = self;
-        UIBarButtonItem* clearBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002421" action:^{
+        UIBarButtonItem* clearBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002421" action:^(id sender) {
             [weakSelf clear];
         }];
-        UIBarButtonItem *saveBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002713" action:^{
+        UIBarButtonItem *saveBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002713" action:^(id sender) {
             [weakSelf save];
         }];
         UIBarButtonItem *flex = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:nil action:nil];

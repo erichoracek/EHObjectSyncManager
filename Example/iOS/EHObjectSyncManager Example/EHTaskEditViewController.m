@@ -63,10 +63,10 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
     
     self.navigationItem.title = (self.task.isInserted ? @"New Task" : @"Edit Task");
 
-    self.navigationItem.leftBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002421" action:^{
+    self.navigationItem.leftBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002421" action:^(id sender) {
         [weakSelf cancelObject];
     }];
-    self.navigationItem.rightBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002713" action:^{
+    self.navigationItem.rightBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002713" action:^(id sender) {
         [weakSelf saveObject];
     }];
     

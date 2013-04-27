@@ -72,10 +72,10 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
     
     self.navigationItem.title = (self.reminder.isInserted ? @"New Reminder" : @"Edit Reminder");
 
-    self.navigationItem.leftBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002421" action:^{
+    self.navigationItem.leftBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002421" action:^(id sender) {
         [weakSelf cancelObject];
     }];
-    self.navigationItem.rightBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002713" action:^{
+    self.navigationItem.rightBarButtonItem = [[EHStyleManager sharedManager] styledBarButtonItemWithSymbolsetTitle:@"\U00002713" action:^(id sender) {
         [weakSelf saveObject];
     }];
     

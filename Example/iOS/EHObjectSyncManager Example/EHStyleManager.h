@@ -12,6 +12,6 @@
 
 + (instancetype)sharedManager;
 
-- (UIBarButtonItem *)styledBarButtonItemWithSymbolsetTitle:(NSString *)title action:(void(^)(void))handler;
+- (UIBarButtonItem *)styledBarButtonItemWithSymbolsetTitle:(NSString *)title action:(BKSenderBlock)handler;
 
 @end

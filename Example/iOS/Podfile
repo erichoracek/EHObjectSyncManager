@@ -7,7 +7,6 @@ pod 'BlocksKit',    '~> 1.8.2'
 
 # Monospace Pods
 # pod 'MSTableKit',             :git => 'https://github.com/monospacecollective/MSTableKit.git', :branch => 'development'
-pod 'UIControl-BlockAction',  :git => 'https://github.com/monospacecollective/UIControl-BlockAction.git'
 pod 'UIView-Autolayout',      :git => 'https://github.com/eric-horacek/UIView-Autolayout'
 
 # Local

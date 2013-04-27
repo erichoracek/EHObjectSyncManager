@@ -57,7 +57,7 @@ static EHStyleManager *singletonInstance = nil;
     return [UIFont fontWithName:@"SS Standard" size:size];
 }
 
-- (UIBarButtonItem *)styledBarButtonItemWithSymbolsetTitle:(NSString *)title action:(void(^)(void))handler
+- (UIBarButtonItem *)styledBarButtonItemWithSymbolsetTitle:(NSString *)title action:(BKSenderBlock)handler
 {
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
     button.titleLabel.font = [self symbolSetFontOfSize:16.0];
