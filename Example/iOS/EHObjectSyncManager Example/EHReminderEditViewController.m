@@ -143,10 +143,10 @@ NSString *const EHReminderReuseIdentifierDelete = @"Delete";
     UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:@"Are you sure you want to delete this reminder?"];
     __weak typeof (self) weakSelf = self;
     [alert addButtonWithTitle:@"No" handler:^{
-        [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
+        [weakSelf.collectionView deselectItemAtIndexPath:weakSelf.collectionView.indexPathsForSelectedItems.lastObject animated:YES];
     }];
     [alert addButtonWithTitle:@"Yes" handler:^{
-        [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
+        [weakSelf.collectionView deselectItemAtIndexPath:weakSelf.collectionView.indexPathsForSelectedItems.lastObject animated:YES];
         completion();
     }];
     [alert show];

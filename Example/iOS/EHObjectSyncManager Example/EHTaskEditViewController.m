@@ -135,10 +135,10 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
     UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:@"Are you sure you want to delete this task?"];
     __weak typeof (self) weakSelf = self;
     [alert addButtonWithTitle:@"No" handler:^{
-        [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
+        [weakSelf.collectionView deselectItemAtIndexPath:weakSelf.collectionView.indexPathsForSelectedItems.lastObject animated:YES];
     }];
     [alert addButtonWithTitle:@"Yes" handler:^{
-        [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
+        [weakSelf.collectionView deselectItemAtIndexPath:weakSelf.collectionView.indexPathsForSelectedItems.lastObject animated:YES];
         completion();
     }];
     [alert show];
@@ -254,7 +254,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
                 reminderEditViewController.managedObjectContext = weakSelf.privateContext;
                 reminderEditViewController.dismissBlock = ^(BOOL animated){
                     [weakSelf dismissViewControllerAnimated:animated completion:^{
-                        [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
+                        [weakSelf.collectionView deselectItemAtIndexPath:weakSelf.collectionView.indexPathsForSelectedItems.lastObject animated:YES];
                     }];
                 };
                 UINavigationController *navigationController = [[UINavigationController alloc] initWithRootViewController:reminderEditViewController];
@@ -280,7 +280,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
                         double delayInSeconds = 0.3;
                         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
                         dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-                            [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
+                            [weakSelf.collectionView deselectItemAtIndexPath:weakSelf.collectionView.indexPathsForSelectedItems.lastObject animated:YES];
                         });
                     };
                     [weakSelf.navigationController pushViewController:reminderEditViewController animated:YES];
@@ -324,7 +324,7 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 - (BOOL)textFieldShouldReturn:(UITextField *)textField
 {
     [self.view endEditing:YES];
-    [self.collectionView deselectItemAtIndexPath:[[self.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
+    [self.collectionView deselectItemAtIndexPath:self.collectionView.indexPathsForSelectedItems.lastObject animated:YES];
     return NO;
 }
 
