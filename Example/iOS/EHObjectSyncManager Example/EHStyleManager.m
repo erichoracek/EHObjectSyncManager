@@ -61,14 +61,13 @@ static EHStyleManager *singletonInstance = nil;
 {
     UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
     button.titleLabel.font = [self symbolSetFontOfSize:16.0];
-    button.contentEdgeInsets = UIEdgeInsetsMake(5.0, 8.0, 0.0, 8.0);
+    button.contentEdgeInsets = UIEdgeInsetsMake(13.0, 14.0, 8.0, 14.0);
     button.titleLabel.shadowOffset = CGSizeMake(0.0, -1.0);
     [button setTitleShadowColor:[UIColor blackColor] forState:UIControlStateNormal];
     [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
     [button setTitleColor:[UIColor lightGrayColor] forState:UIControlStateHighlighted];
     [button setTitle:title forState:UIControlStateNormal];
     [button sizeToFit];
-
     [button addEventHandler:handler forControlEvents:UIControlEventTouchUpInside];
     UIBarButtonItem *barButtonItem = [[UIBarButtonItem alloc] initWithCustomView:button];
     return barButtonItem;
