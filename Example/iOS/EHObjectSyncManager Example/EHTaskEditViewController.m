@@ -134,7 +134,9 @@ NSString *const EHTaskReuseIdentifierDelete = @"Delete";
 {
     UIAlertView *alert = [UIAlertView alertViewWithTitle:@"Warning" message:@"Are you sure you want to delete this task?"];
     __weak typeof (self) weakSelf = self;
-    [alert addButtonWithTitle:@"No" handler:nil];
+    [alert addButtonWithTitle:@"No" handler:^{
+        [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
+    }];
     [alert addButtonWithTitle:@"Yes" handler:^{
         [weakSelf.collectionView deselectItemAtIndexPath:[[weakSelf.collectionView indexPathsForSelectedItems] lastObject] animated:YES];
         completion();
