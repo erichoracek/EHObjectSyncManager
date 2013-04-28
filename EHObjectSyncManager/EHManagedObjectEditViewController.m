@@ -166,7 +166,7 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
                 [self.privateContext deleteObject:self.privateTargetObject];
             }];
             [self savePrivateContextWithCompletion:^(BOOL success, NSError *error) {
-                if (!success) NSLog(@"Failed to delete object in private context with error %@", error);
+                if (!success) NSLog(@"Failed to delete object (%@) in private context with error %@", self.privateTargetObject.objectID, error);
             }];
         }
         [weakSelf didFailReloadObjectWithError:error];
@@ -175,16 +175,17 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 - (void)didReloadObject
 {
-    
+    NSLog(@"Successfully reloaded (%@)", self.targetObject.objectID);
 }
 
 - (void)didFailReloadObjectWithError:(NSError *)error
 {
-    
+    NSLog(@"Failed to reload (%@) with error %@", self.privateTargetObject.objectID, [error debugDescription]);
 }
 
 - (void)refreshTargetObject
 {
+    // This is performed in the assigned context, no our private context, to refresh changes back into it
     [self.managedObjectContext performBlock:^{
         NSLog(@"Refreshing target object (%@)", self.targetObject.objectID);
         [self.managedObjectContext refreshObject:self.targetObject mergeChanges:YES];
@@ -205,7 +206,7 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 - (void)didCancelObject
 {
-    NSLog(@"Successfully cancelled %@", self.targetObject.objectID);
+    NSLog(@"Successfully cancelled (%@)", self.privateTargetObject.objectID);
 }
 
 - (void)saveObject
@@ -237,7 +238,7 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 - (void)didFailSaveObjectWithError:(NSError *)error
 {
-    NSLog(@"Failed to save %@ with error %@", self.targetObject.objectID, [error debugDescription]);
+    NSLog(@"Failed to save (%@) with error %@", self.privateTargetObject.objectID, [error debugDescription]);
 }
 
 - (void)deleteObject
@@ -268,12 +269,12 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 - (void)didDeleteObject
 {
-    NSLog(@"Successfully deleted (%@)", self.targetObject.objectID);
+    NSLog(@"Successfully deleted (%@)", self.privateTargetObject.objectID);
 }
 
 - (void)didFailDeleteObjectWithError:(NSError *)error
 {
-    NSLog(@"Failed to delete %@ with error %@", self.targetObject.objectID, [error debugDescription]);
+    NSLog(@"Failed to delete (%@) with error %@", self.privateTargetObject.objectID, [error debugDescription]);
 }
 
 - (void)objectWasDeleted
