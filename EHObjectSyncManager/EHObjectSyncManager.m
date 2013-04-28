@@ -478,6 +478,7 @@ static NSString *EHLogStringFromObjectIDAndSyncDictionary(NSString *objectID, NS
             NSAssert(self.syncPath, @"A DELETE object sync request requres a sync path");
             break;
         default:
+            NSAssert(NO, @"Unsupported request method");
             break;
     }
     
@@ -525,7 +526,6 @@ static NSString *EHLogStringFromObjectIDAndSyncDictionary(NSString *objectID, NS
             break;
         }
         default:
-            NSAssert(NO, @"Unsupported request method");
             break;
     }
 }
