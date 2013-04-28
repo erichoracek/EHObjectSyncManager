@@ -32,7 +32,7 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 - (void)dealloc
 {
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:NSManagedObjectContextDidSaveNotification object:nil];
 }
 
 - (void)viewDidLoad
