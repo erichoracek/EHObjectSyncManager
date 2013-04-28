@@ -103,17 +103,9 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 - (void)savePrivateContextWithCompletion:(void (^)(BOOL success, NSError *error))completion
 {
-    // Prevent fetched results controller delegate callbacks during our private context's save
-    self.fetchedResultsController.delegate = nil;
-    
-    void(^internalCompletion)(BOOL success, NSError *error) = ^(BOOL success, NSError *error) {
-        if (completion) completion(success, error);
-        // Re-enable fetched results controller delegate callbacks during our private context's save
-        self.fetchedResultsController.delegate = self;
-    };
-    
     __block NSError* error;
     __block BOOL success;
+    
     if ([[EHObjectSyncManager sharedManager] managedObjectContext] == self.managedObjectContext) {
         [self obtainPermanentIdsForInsertedObjects];
         self.disableMergeForNestedSave = YES;
@@ -125,7 +117,7 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
         }];
     }
     dispatch_async(dispatch_get_main_queue(), ^{
-        internalCompletion(success, error);
+        if (completion) completion(success, error);
     });
 }
 
@@ -219,7 +211,11 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 - (void)saveObject
 {
     [self willSaveObject];
+    // Prevent fetched results controller delegate callbacks during our private context's save
+    self.fetchedResultsController.delegate = nil;
     [self savePrivateContextWithCompletion:^(BOOL success, NSError *error) {
+        // Re-enable fetched results controller delegate callbacks during our private context's save
+        self.fetchedResultsController.delegate = self;
         if (success) {
             [self didSaveObject];
         } else {
@@ -247,10 +243,14 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 - (void)deleteObject
 {
     [self willDeleteObjectWithCompletion:^{
+        // Prevent fetched results controller delegate callbacks during our private context's save
+        self.fetchedResultsController.delegate = nil;
         [self.privateContext performBlockAndWait:^{
             [self.privateContext deleteObject:self.privateTargetObject];
         }];
         [self savePrivateContextWithCompletion:^(BOOL success, NSError *error) {
+            // Re-enable fetched results controller delegate callbacks during our private context's save
+            self.fetchedResultsController.delegate = self;
             if (success) {
                 [self didDeleteObject];
             } else {
