@@ -91,6 +91,18 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
 
 #pragma mark - EHManagedObjectEditViewController
 
+- (NSEntityDescription *)entityInContext:(NSManagedObjectContext *)context;
+{
+    NSAssert(NO, @"Subclasses should override this method");
+    return nil;
+}
+
+- (BOOL)objectExistsRemotely
+{
+    NSAssert(NO, @"Subclasses should override this method");
+    return NO;
+}
+
 - (void)handleManagedObjectContextDidSaveNotification:(NSNotification *)notification
 {
     NSAssert([notification object] == self.privateContext.parentContext, @"Received Managed Object Context Did Save Notification for Unexpected Context: %@", [notification object]);
@@ -121,12 +133,6 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
     });
 }
 
-- (NSEntityDescription *)entityInContext:(NSManagedObjectContext *)context;
-{
-    NSAssert(NO, @"Subclasses should override this method");
-    return nil;
-}
-
 - (void)obtainPermanentIdsForInsertedObjects
 {
     // Obtain a permanent ID for the private object before proceeding
@@ -142,12 +148,6 @@ BOOL EHManagedObjectEditViewControllerIsEditingOtherObject(NSManagedObject *mana
         if (!success) NSLog(@"Failed to obtain permanent ID for objects %@ with error %@", [temporaryObjects valueForKey:@"objectID"], error);
         else NSLog(@"Successfully obtained permanent ID for objects %@", [temporaryObjects valueForKey:@"objectID"]);
     }
-}
-
-- (BOOL)objectExistsRemotely
-{
-    NSAssert(NO, @"Subclasses should override this method");
-    return NO;
 }
 
 - (void)reloadObject
