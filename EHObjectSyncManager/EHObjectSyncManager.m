@@ -8,35 +8,40 @@
 
 #import "EHObjectSyncManager.h"
 
-NSString * const EHObjectSyncRequestMethod = @"EHObjectSyncRequestMethod";
-NSString * const EHObjectSyncClassName = @"EHObjectSyncClassName";
-NSString * const EHObjectSyncDate = @"EHObjectSyncDate";
-NSString * const EHObjectSyncPath = @"EHObjectSyncPath";
-NSString * const EHObjectSyncRank = @"EHObjectSyncRank";
-NSString * const EHUserDefaultsObjectSyncStore = @"EHUserDefaultsObjectSyncStore";
+NSString * const EHObjectSyncRequestMethod = @"EHObjectSyncRequestMethod"; // RKRequestMethod string
+NSString * const EHObjectSyncClassName     = @"EHObjectSyncClassName";     // Class name of the object that changed
+NSString * const EHObjectSyncDate          = @"EHObjectSyncDate";          // Date that the change occurred
+NSString * const EHObjectSyncPath          = @"EHObjectSyncPath";          // String path that the request occurs at (DELETE only)
 
-/**
- Returns the first `EHSyncDescriptor` object from the given array that matches the given object.
- 
- @param syncDescriptors An array of `EHSyncDescriptor` objects.
- @param object The object to find a matching sync descriptor for.
- @return An `EHSyncDescriptor` object matching the given object, or `nil` if none could be found.
- */
-static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDescriptors, id object)
+NSString * const EHObjectSyncFileName = @"EHObjectSyncManagerPendingRequests.plist";
+
+static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingClass(NSArray *syncDescriptors, Class searchClass)
 {
-    Class searchClass = [object class];
     do {
         for (EHSyncDescriptor *syncDescriptor in syncDescriptors) {
             if ([syncDescriptor.entityMapping.objectClass isEqual:searchClass]) return syncDescriptor;
         }
         searchClass = [searchClass superclass];
     } while (searchClass);
-    
     return nil;
+}
+
+static NSString *EHLogStringFromObjectIDAndSyncDictionary(NSString *objectID, NSDictionary *syncDictionary)
+{
+    static NSDateFormatter *dateFormatter;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        dateFormatter = [[NSDateFormatter alloc] init];
+        [dateFormatter setDateStyle:NSDateFormatterShortStyle];
+        [dateFormatter setTimeStyle:NSDateFormatterFullStyle];
+    });
+    NSString *formattedDate = [dateFormatter stringFromDate:syncDictionary[EHObjectSyncDate]];
+    return [NSString stringWithFormat:@"%@ %@ (ObjectID: %@, Date %@)", syncDictionary[EHObjectSyncRequestMethod], syncDictionary[EHObjectSyncClassName], objectID, formattedDate];
 }
 
 @interface EHObjectSyncManager ()
 
+@property (nonatomic, strong) NSMutableDictionary *syncRequestDictionary;
 @property (nonatomic, strong) NSMutableArray *mutableSyncDescriptors;
 @property (nonatomic, strong) NSOperationQueue *objectSyncOperationQueue;
 
@@ -44,11 +49,12 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
 - (void)handleManagedObjectContextDidChangeNotification:(NSNotification *)notification;
 
 - (void)sync;
-- (NSString *)logStringForObjectSyncDictionary:(NSDictionary *)dictionary objectID:(NSString *)objectID;
 
 @end
 
 @implementation EHObjectSyncManager
+
+#pragma mark - RKObjectManager
 
 - (id)initWithHTTPClient:(AFHTTPClient *)client
 {
@@ -56,13 +62,24 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
     if (self) {
         self.mutableSyncDescriptors = [NSMutableArray new];
         self.objectSyncOperationQueue = [NSOperationQueue new];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(saveSyncRequestDictionaryFile) name:UIApplicationWillTerminateNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(saveSyncRequestDictionaryFile) name:UIApplicationWillResignActiveNotification object:nil];
+        
+        [self loadSyncRequestDictionaryFile];
+        if (!self.syncRequestDictionary) {
+            self.syncRequestDictionary = [NSMutableDictionary dictionary];
+        }
+        [self saveSyncRequestDictionaryFile];
     }
     return self;
 }
 
 - (void)dealloc
 {
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillTerminateNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillResignActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:NSManagedObjectContextObjectsDidChangeNotification object:nil];
 }
 
 - (void)configureSyncManagerWithManagedObjectStore:(RKManagedObjectStore *)managedObjectStore
@@ -86,7 +103,61 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
     }];
 }
 
+- (void)enqueueObjectRequestOperation:(RKObjectRequestOperation *)objectRequestOperation
+{
+#warning ensure that requests aren't enqued that will update that state of objects
+}
+
 #pragma mark - EHObjectSyncManager
+
+#pragma mark Sync Dictionary
+
++ (dispatch_queue_t)sharedQueue
+{
+    static dispatch_queue_t queue;
+    static dispatch_once_t predicate;
+    dispatch_once(&predicate, ^{
+        queue = dispatch_queue_create([NSStringFromClass(self.class) UTF8String], DISPATCH_QUEUE_SERIAL);
+    });
+    return queue;
+}
+
+- (NSURL *)syncRequestDictionaryFileURL
+{
+    // Place in same directory as Core Data store
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    return [NSURL fileURLWithPathComponents:@[ [paths lastObject], EHObjectSyncFileName ]];
+}
+
+- (void)loadSyncRequestDictionaryFile
+{
+    dispatch_async([self.class sharedQueue], ^{
+        NSError *error;
+        if ([[self syncRequestDictionaryFileURL] checkResourceIsReachableAndReturnError:&error]) {
+            self.syncRequestDictionary = [[NSMutableDictionary alloc] initWithContentsOfURL:[self syncRequestDictionaryFileURL]];
+        } else {
+            NSLog(@"Unable to load sync request dictionary file %@", [error debugDescription]);
+        }
+    });
+}
+
+- (void)saveSyncRequestDictionaryFile
+{
+    // Create a copy on the main thread, and save it on the background thread so that it's not being mutated during saving
+    NSMutableDictionary *syncRequestDictionaryToSave = [self.syncRequestDictionary copy];
+    dispatch_async([self.class sharedQueue], ^{
+        if (![syncRequestDictionaryToSave writeToURL:[self syncRequestDictionaryFileURL] atomically:YES]) {
+            NSLog(@"Unable to write sync request dictionary file");
+        }
+    });
+}
+
+- (void)removeSyncDictionaryForObjectIDStringURI:(NSString *)objectIDStringURI
+{
+    NSParameterAssert(self.syncRequestDictionary[objectIDStringURI]);
+    [self.syncRequestDictionary removeObjectForKey:objectIDStringURI];
+    [self saveSyncRequestDictionaryFile];
+}
 
 #pragma mark Sync Descriptors
 
@@ -139,7 +210,7 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
     NSSet *insertedObjects = notification.userInfo[NSInsertedObjectsKey];
     
     if ((updatedObjects.count == 0) && (insertedObjects.count == 0) && (deletedObjects.count == 0)) {
-        RKLogCritical(@"No changes, returning");
+        RKLogCritical(@"No changes");
         return;
     } else {
         if (insertedObjects.count) NSLog(@"Inserted Objects %@", [insertedObjects valueForKey:@"objectID"]);
@@ -147,16 +218,10 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
         if (deletedObjects.count) NSLog(@"Deleted Objects %@", [deletedObjects valueForKey:@"objectID"]);
     }
     
-    // Instantiate the synchronization dictionary
-    NSMutableDictionary *objectSyncStoreDictionary = [[[NSUserDefaults standardUserDefaults] objectForKey:EHUserDefaultsObjectSyncStore] mutableCopy];
-    if (objectSyncStoreDictionary == nil) {
-        objectSyncStoreDictionary = [NSMutableDictionary dictionary];
-    }
-    
     // Updated Objects
     for (NSManagedObject *managedObject in updatedObjects) {
         
-        EHSyncDescriptor *syncDescriptor = EHSyncDescriptorFromArrayMatchingObject(self.mutableSyncDescriptors, managedObject);
+        EHSyncDescriptor *syncDescriptor = EHSyncDescriptorFromArrayMatchingClass(self.mutableSyncDescriptors, managedObject.class);
         if (!syncDescriptor) continue;
         
         // Don't continue If the object doesn't exist remotely
@@ -165,73 +230,73 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
         NSString *objectID = [[managedObject.objectID URIRepresentation] absoluteString];
         
         // Don't override a existing enqueued POST
-        RKRequestMethod requestMethod = [objectSyncStoreDictionary[objectID][EHObjectSyncRequestMethod] integerValue];
+        RKRequestMethod requestMethod = [self.syncRequestDictionary[objectID][EHObjectSyncRequestMethod] integerValue];
         if (requestMethod == RKRequestMethodPOST) continue;
         
-        NSDictionary *objectDictionary = @{
-                                           EHObjectSyncRequestMethod : @(RKRequestMethodPUT),
-                                           EHObjectSyncClassName : NSStringFromClass(managedObject.class),
-                                           EHObjectSyncRank : syncDescriptor.syncRank,
-                                           EHObjectSyncDate : NSDate.date
-                                           };
+        NSDictionary *syncDictionary = @{
+            EHObjectSyncRequestMethod : RKStringFromRequestMethod(RKRequestMethodPUT),
+            EHObjectSyncClassName : NSStringFromClass(managedObject.class),
+            EHObjectSyncDate : NSDate.date
+        };
         
-        NSLog(@"OBJECT SYNC: Object Updated: %@", [self logStringForObjectSyncDictionary:objectDictionary objectID:objectID]);
-        [objectSyncStoreDictionary setObject:objectDictionary forKey:objectID];
+        NSLog(@"OBJECT SYNC: Object Updated: %@", EHLogStringFromObjectIDAndSyncDictionary(objectID, syncDictionary));
+        [self.syncRequestDictionary setObject:syncDictionary forKey:objectID];
     }
     
     // Inserted Objects
     for (NSManagedObject *managedObject in insertedObjects) {
         
-        EHSyncDescriptor *syncDescriptor = EHSyncDescriptorFromArrayMatchingObject(self.mutableSyncDescriptors, managedObject);
+        EHSyncDescriptor *syncDescriptor = EHSyncDescriptorFromArrayMatchingClass(self.mutableSyncDescriptors, managedObject.class);
         if (!syncDescriptor) continue;
         
         // If the object already exists remotely, don't enqueue a POST
         if ([syncDescriptor existsRemotelyBlock](managedObject)) continue;
         
         NSString *objectID = [[managedObject.objectID URIRepresentation] absoluteString];
-        NSDictionary *objectDictionary = @{
-                                           EHObjectSyncRequestMethod : @(RKRequestMethodPOST),
-                                           EHObjectSyncClassName : NSStringFromClass(managedObject.class),
-                                           EHObjectSyncRank : syncDescriptor.syncRank,
-                                           EHObjectSyncDate : NSDate.date
-                                           };
-        NSLog(@"OBJECT SYNC: Object Inserted: %@", [self logStringForObjectSyncDictionary:objectDictionary objectID:objectID]);
-        [objectSyncStoreDictionary setObject:objectDictionary forKey:objectID];
+        NSDictionary *syncDictionary = @{
+            EHObjectSyncRequestMethod : RKStringFromRequestMethod(RKRequestMethodPOST),
+            EHObjectSyncClassName : NSStringFromClass(managedObject.class),
+            EHObjectSyncDate : NSDate.date
+        };
+        NSLog(@"OBJECT SYNC: Object Inserted: %@", EHLogStringFromObjectIDAndSyncDictionary(objectID, syncDictionary));
+        [self.syncRequestDictionary setObject:syncDictionary forKey:objectID];
     }
     
     // Deleted Objects
     for (NSManagedObject *managedObject in deletedObjects) {
         
-        EHSyncDescriptor *syncDescriptor = EHSyncDescriptorFromArrayMatchingObject(self.mutableSyncDescriptors, managedObject);
+        EHSyncDescriptor *syncDescriptor = EHSyncDescriptorFromArrayMatchingClass(self.mutableSyncDescriptors, managedObject.class);
         if (!syncDescriptor) continue;
         
         NSString *objectID = [[managedObject.objectID URIRepresentation] absoluteString];
         
         // If we have a non-remote object that's been deleted, just remove it from the dictionary
-        if (objectSyncStoreDictionary[objectID] && [objectSyncStoreDictionary[objectID][EHObjectSyncRequestMethod] integerValue] != RKRequestMethodDELETE) {
+        if (self.syncRequestDictionary[objectID] && [self.syncRequestDictionary[objectID][EHObjectSyncRequestMethod] integerValue] != RKRequestMethodDELETE) {
             NSLog(@"OBJECT SYNC: Object has since deleted locally, removing from sync store dictionary: %@", managedObject);
-            [objectSyncStoreDictionary removeObjectForKey:objectID];
+            [self.syncRequestDictionary removeObjectForKey:objectID];
+            [self saveSyncRequestDictionaryFile];
         }
         
         // Don't continue If the object doesn't exist remotely
         if ([syncDescriptor existsRemotelyBlock](managedObject) == NO) continue;
         
+        // Locate the path of the object, since it will be deleted
         RKRoute *route = [self.router.routeSet routeForObject:managedObject method:RKRequestMethodDELETE];
         RKPathMatcher *pathMatcher = [RKPathMatcher pathMatcherWithPattern:route.pathPattern];
         NSString *path = [pathMatcher pathFromObject:managedObject addingEscapes:route.shouldEscapePath interpolatedParameters:nil];
         
-        NSDictionary *objectDictionary = @{
-                                           EHObjectSyncRequestMethod : @(RKRequestMethodDELETE),
-                                           EHObjectSyncClassName : NSStringFromClass(managedObject.class),
-                                           EHObjectSyncRank : syncDescriptor.syncRank,
-                                           EHObjectSyncDate : [NSDate date],
-                                           EHObjectSyncPath : path
-                                           };
-        NSLog(@"OBJECT SYNC: Object Deleted: %@", [self logStringForObjectSyncDictionary:objectDictionary objectID:objectID]);
-        [objectSyncStoreDictionary setObject:objectDictionary forKey:objectID];
+        NSDictionary *syncDictionary = @{
+            EHObjectSyncRequestMethod : RKStringFromRequestMethod(RKRequestMethodDELETE),
+            EHObjectSyncClassName : NSStringFromClass(managedObject.class),
+            EHObjectSyncDate : [NSDate date],
+            EHObjectSyncPath : path
+        };
+        NSLog(@"OBJECT SYNC: Object Deleted: %@", EHLogStringFromObjectIDAndSyncDictionary(objectID, syncDictionary));
+        [self.syncRequestDictionary setObject:syncDictionary forKey:objectID];
     }
     
-    [[NSUserDefaults standardUserDefaults] setObject:objectSyncStoreDictionary forKey:EHUserDefaultsObjectSyncStore];
+    // Serialize the object to disk
+    [self saveSyncRequestDictionaryFile];
     
     [self.managedObjectContext performBlock:^{
         [self sync];
@@ -240,70 +305,78 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
 
 - (void)sync
 {
-    if ([self.objectSyncOperationQueue operationCount]) {
-        NSLog(@"Awaiting execution of %ld enqueued connection operations: %@", (long) [self.objectSyncOperationQueue operationCount], [self.objectSyncOperationQueue operations]);
-//        [self.objectSyncOperationQueue waitUntilAllOperationsAreFinished];
+    // Don't attempt to enqueue requests if the site is not reachable
+    if (self.HTTPClient.networkReachabilityStatus == AFNetworkReachabilityStatusNotReachable) {
         return;
     }
     
-    // If the object sync store is empty, no sync is needed
-    NSDictionary *objectSyncDictionary = [[NSUserDefaults standardUserDefaults] objectForKey:EHUserDefaultsObjectSyncStore];
-    if (objectSyncDictionary == nil || objectSyncDictionary.count == 0) {
+    // While there are pending requests, don't sync until they're finished
+    if ([self.objectSyncOperationQueue operationCount]) {
         return;
     }
+    
+    // Suspend the queue for the creating of requests
+    self.objectSyncOperationQueue.suspended = YES;
     
     // Establish a sync rank dictionation with each of the operations for that rank (keyed by rank)
     NSMutableDictionary *operationsForSyncRank = [NSMutableDictionary new];
-    self.objectSyncOperationQueue.suspended = YES;
     
-    [objectSyncDictionary enumerateKeysAndObjectsUsingBlock:^(NSString *objectIDStringURI, NSDictionary *objectDictionary, BOOL *stop) {
+    [self.syncRequestDictionary enumerateKeysAndObjectsUsingBlock:^(NSString *objectIDStringURI, NSDictionary *objectDictionary, BOOL *stop) {
         
-        NSLog(@"OBJECT SYNC: Building Sync Operation: %@", [self logStringForObjectSyncDictionary:objectDictionary objectID:objectIDStringURI]);
+        EHSyncDescriptor *syncDescriptor = EHSyncDescriptorFromArrayMatchingClass(self.mutableSyncDescriptors, NSClassFromString(objectDictionary[EHObjectSyncClassName]));
+        if (!syncDescriptor) return;
+        
+        NSLog(@"OBJECT SYNC: Building Sync Operation: %@", EHLogStringFromObjectIDAndSyncDictionary(objectIDStringURI, objectDictionary));
         
         // Add an array for this rank if it doesn't exist
-        NSMutableArray *syncRankOperations = operationsForSyncRank[objectDictionary[EHObjectSyncRank]];
+        NSMutableArray *syncRankOperations = operationsForSyncRank[syncDescriptor.syncRank];
         if (!syncRankOperations) {
             syncRankOperations = [NSMutableArray new];
-            operationsForSyncRank[objectDictionary[EHObjectSyncRank]] = syncRankOperations;
+            operationsForSyncRank[syncDescriptor.syncRank] = syncRankOperations;
         }
         
+        RKRequestMethod requestMethod = RKRequestMethodFromString(objectDictionary[EHObjectSyncRequestMethod]);
+        
         EHObjectSyncOperation *objectSyncOperation = [EHObjectSyncOperation new];
+        objectSyncOperation.objectSyncManager = self;
         objectSyncOperation.objectIDStringURI = objectIDStringURI;
         objectSyncOperation.syncClass = NSClassFromString(objectDictionary[EHObjectSyncClassName]);
         objectSyncOperation.syncDate = objectDictionary[EHObjectSyncDate];
-        objectSyncOperation.syncRank = objectDictionary[EHObjectSyncRank];
-        objectSyncOperation.syncRequestMethod = objectDictionary[EHObjectSyncRequestMethod];
+        objectSyncOperation.syncRank = syncDescriptor.syncRank;
+        objectSyncOperation.syncRequestMethod = requestMethod;
         
-        switch ([objectDictionary[EHObjectSyncRequestMethod] integerValue]) {
+        switch (requestMethod) {
             case RKRequestMethodPOST:
             case RKRequestMethodPUT: {
                 NSManagedObjectID *managedObjectID = [[self.managedObjectContext persistentStoreCoordinator] managedObjectIDForURIRepresentation:[NSURL URLWithString:objectIDStringURI]];
                 NSError *error;
                 NSManagedObject *syncObject = [self.managedObjectContext existingObjectWithID:managedObjectID error:&error];
-                // If we're unable to find object in our MOC, remove it from sync dictionary, and don't enqueue the request
+                // If we're unable to locate the object in our MOC, remove it from sync dictionary, and don't proceed
                 if (!syncObject) {
-                    NSMutableDictionary *synchronizationDictionary = [[[NSUserDefaults standardUserDefaults] objectForKey:EHUserDefaultsObjectSyncStore] mutableCopy];
-                    NSLog(@"Removing orphaned object %@, error %@", objectIDStringURI, [error debugDescription]);
-                    [synchronizationDictionary removeObjectForKey:objectIDStringURI];
-                    [[NSUserDefaults standardUserDefaults] setObject:synchronizationDictionary forKey:EHUserDefaultsObjectSyncStore];
+                    NSLog(@"Cancelling Request, unable to find sync object: %@", [error debugDescription]);
+                    [self.syncRequestDictionary removeObjectForKey:objectIDStringURI];
                     return;
                 }
                 objectSyncOperation.syncObject = syncObject;
+                [self.objectSyncOperationQueue addOperation:objectSyncOperation];
+                [syncRankOperations addObject:objectSyncOperation];
                 break;
             }
             case RKRequestMethodDELETE:
                 objectSyncOperation.syncPath = objectDictionary[EHObjectSyncPath];
+                [self.objectSyncOperationQueue addOperation:objectSyncOperation];
+                [syncRankOperations addObject:objectSyncOperation];
                 break;
             default:
                 NSAssert(NO, @"Unsupported request method");
                 return;
                 break;
         }
-        
-        [self.objectSyncOperationQueue addOperation:objectSyncOperation];
-        [syncRankOperations addObject:objectSyncOperation];
     }];
     
+    [self saveSyncRequestDictionaryFile];
+    
+    // Sort requests (using dependencies) by rank
     NSArray *sortedRanks = [[operationsForSyncRank allKeys] sortedArrayUsingComparator:^NSComparisonResult(NSNumber *rank1, NSNumber *rank2) {
         return [rank1 compare:rank2];
     }];
@@ -320,21 +393,8 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
         highRank = lowRank;
     }
     
+    // Start the network queue
     self.objectSyncOperationQueue.suspended = NO;
-}
-
-- (NSString *)logStringForObjectSyncDictionary:(NSDictionary *)dictionary objectID:(NSString *)objectID
-{
-    static NSDateFormatter *dateFormatter;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        dateFormatter = [[NSDateFormatter alloc] init];
-        [dateFormatter setDateStyle:NSDateFormatterShortStyle];
-        [dateFormatter setTimeStyle:NSDateFormatterFullStyle];
-    });
-    NSString *formattedDate = [dateFormatter stringFromDate:dictionary[EHObjectSyncDate]];
-    
-    return [NSString stringWithFormat:@"%@ (ObjectID: %@, Rank %@, Date %@)", dictionary[EHObjectSyncClassName], objectID, dictionary[EHObjectSyncRank], formattedDate];
 }
 
 @end
@@ -408,7 +468,7 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
 
 - (void)startRequest
 {
-    switch (self.syncRequestMethod.integerValue) {
+    switch (self.syncRequestMethod) {
         case RKRequestMethodPOST:
         case RKRequestMethodPUT:
             NSAssert(self.syncObject, @"A POST and PUT object sync request requres a sync object");
@@ -416,12 +476,14 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
         case RKRequestMethodDELETE:
             NSAssert(self.syncPath, @"A DELETE object sync request requres a sync path");
             break;
+        default:
+            break;
     }
     
-    switch (self.syncRequestMethod.integerValue) {
+    switch (self.syncRequestMethod) {
         case RKRequestMethodPOST: {
             NSLog(@"Enqueueing POST (%@)", self.syncClass);
-            RKObjectRequestOperation *POSTRequestOperation = [[EHObjectSyncManager sharedManager] appropriateObjectRequestOperationWithObject:self.syncObject method:RKRequestMethodPOST path:nil parameters:nil];
+            RKObjectRequestOperation *POSTRequestOperation = [[EHObjectSyncManager sharedManager] appropriateObjectRequestOperationWithObject:self.syncObject method:self.syncRequestMethod path:nil parameters:nil];
             [POSTRequestOperation setCompletionBlockWithSuccess:^(RKObjectRequestOperation *operation, RKMappingResult *mappingResult) {
                 NSLog(@"POST Succeeded (%@)", self.syncClass);
                 [self cleanupRequest];
@@ -435,7 +497,7 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
         }
         case RKRequestMethodPUT: {
             NSLog(@"Enqueueing PUT (%@)", self.syncClass);
-            RKObjectRequestOperation *PUTRequestOperation = [[EHObjectSyncManager sharedManager] appropriateObjectRequestOperationWithObject:self.syncObject method:RKRequestMethodPUT path:nil parameters:nil];
+            RKObjectRequestOperation *PUTRequestOperation = [[EHObjectSyncManager sharedManager] appropriateObjectRequestOperationWithObject:self.syncObject method:self.syncRequestMethod path:nil parameters:nil];
             [PUTRequestOperation setCompletionBlockWithSuccess:^(RKObjectRequestOperation *operation, RKMappingResult *mappingResult) {
                 NSLog(@"PUT Succeeded (%@)", self.syncClass);
                 [self cleanupRequest];
@@ -449,7 +511,7 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
         }
         case RKRequestMethodDELETE: {
             NSLog(@"Enqueueing DELETE (%@)", self.syncClass);
-            NSURLRequest *deleteRequest = [(AFHTTPClient *)[EHObjectSyncManager sharedManager] requestWithMethod:@"DELETE" path:self.syncPath parameters:nil];
+            NSURLRequest *deleteRequest = [(AFHTTPClient *)[EHObjectSyncManager sharedManager] requestWithMethod:RKStringFromRequestMethod(self.syncRequestMethod) path:self.syncPath parameters:nil];
             AFJSONRequestOperation *DELETERequestOperation = [AFJSONRequestOperation JSONRequestOperationWithRequest:deleteRequest success:^(NSURLRequest *request, NSHTTPURLResponse *response, id JSON) {
                 NSLog(@"DELETE Succeeded (%@)", self.syncClass);
                 [self cleanupRequest];
@@ -467,7 +529,7 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
     }
 }
 
-- (void)cleanupRequest;
+- (void)cleanupRequest
 {
     NSAssert([self.syncRequestOperation isFinished], @"Request operation must be finished");
     
@@ -489,7 +551,12 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
             [self removeObjectFromSyncDictionary];
         }
     }
-
+    
+    if ([(AFHTTPRequestOperation *)self.syncRequestOperation error]) {
+        NSLog(@"Request Failed, cancelling all further request operations");
+        [self.objectSyncManager.operationQueue cancelAllOperations];
+    }
+    
     // Executing -> Finished
     [self willChangeValueForKey:@"isFinished"];
     [self willChangeValueForKey:@"isExecuting"];
@@ -500,10 +567,7 @@ static EHSyncDescriptor *EHSyncDescriptorFromArrayMatchingObject(NSArray *syncDe
 
 - (void)removeObjectFromSyncDictionary
 {
-    NSMutableDictionary *synchronizationDictionary = [[[NSUserDefaults standardUserDefaults] objectForKey:EHUserDefaultsObjectSyncStore] mutableCopy];
-    NSLog(@"Removing URI %@", self.objectIDStringURI);
-    [synchronizationDictionary removeObjectForKey:self.objectIDStringURI];
-    [[NSUserDefaults standardUserDefaults] setObject:synchronizationDictionary forKey:EHUserDefaultsObjectSyncStore];
+    [self.objectSyncManager removeSyncDictionaryForObjectIDStringURI:self.objectIDStringURI];
 }
 
 @end
