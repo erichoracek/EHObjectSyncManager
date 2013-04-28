@@ -106,6 +106,7 @@ static NSString *EHLogStringFromObjectIDAndSyncDictionary(NSString *objectID, NS
 - (void)enqueueObjectRequestOperation:(RKObjectRequestOperation *)objectRequestOperation
 {
 #warning ensure that requests aren't enqued that will update that state of objects
+    [super enqueueObjectRequestOperation:objectRequestOperation];
 }
 
 #pragma mark - EHObjectSyncManager
