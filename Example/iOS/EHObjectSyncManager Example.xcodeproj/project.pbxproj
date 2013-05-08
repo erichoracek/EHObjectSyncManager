@@ -36,7 +36,6 @@
 		3AA2FD8F171C8DCF00230E35 /* ixPickerOverlaySectionWheel.png in Resources */ = {isa = PBXBuildFile; fileRef = 3AA2FD81171C8DCF00230E35 /* ixPickerOverlaySectionWheel.png */; };
 		3AA2FD90171C8DCF00230E35 /* ixPickerOverlaySectionWheel@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 3AA2FD82171C8DCF00230E35 /* ixPickerOverlaySectionWheel@2x.png */; };
 		3AA2FD93171C8DCF00230E35 /* IXPickerOverlayView.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AA2FD86171C8DCF00230E35 /* IXPickerOverlayView.m */; };
-		3AA2FD96171C957700230E35 /* EHEtchView.m in Sources */ = {isa = PBXBuildFile; fileRef = 3AA2FD95171C957600230E35 /* EHEtchView.m */; };
 		3ABE7C1C170D14EF00996086 /* EHTaskEditViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 3ABE7C1B170D14EF00996086 /* EHTaskEditViewController.m */; };
 		3AC70ADC171A1A6F00CBA034 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AC70ADB171A1A6F00CBA034 /* SystemConfiguration.framework */; };
 		3AC70ADE171A1A7500CBA034 /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AC70ADD171A1A7500CBA034 /* MobileCoreServices.framework */; };
@@ -90,8 +89,6 @@
 		3AA2FD82171C8DCF00230E35 /* ixPickerOverlaySectionWheel@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "ixPickerOverlaySectionWheel@2x.png"; sourceTree = "<group>"; };
 		3AA2FD85171C8DCF00230E35 /* IXPickerOverlayView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IXPickerOverlayView.h; sourceTree = "<group>"; };
 		3AA2FD86171C8DCF00230E35 /* IXPickerOverlayView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IXPickerOverlayView.m; sourceTree = "<group>"; };
-		3AA2FD94171C957600230E35 /* EHEtchView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHEtchView.h; sourceTree = "<group>"; };
-		3AA2FD95171C957600230E35 /* EHEtchView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHEtchView.m; sourceTree = "<group>"; };
 		3ABE7C1A170D14EF00996086 /* EHTaskEditViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EHTaskEditViewController.h; sourceTree = "<group>"; };
 		3ABE7C1B170D14EF00996086 /* EHTaskEditViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EHTaskEditViewController.m; sourceTree = "<group>"; };
 		3AC70ADB171A1A6F00CBA034 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
@@ -184,8 +181,6 @@
 				3ACAB122172AECD100C8A821 /* Model */,
 				3ACAB123172AED9700C8A821 /* View Controllers */,
 				3A2ED986170A248600E3FD02 /* Supporting Files */,
-				3AA2FD94171C957600230E35 /* EHEtchView.h */,
-				3AA2FD95171C957600230E35 /* EHEtchView.m */,
 			);
 			path = "EHObjectSyncManager Example";
 			sourceTree = "<group>";
@@ -382,7 +377,6 @@
 				3AA2FD70171BAC4000230E35 /* EHDatePickerController.m in Sources */,
 				3AA2FD77171C6D4C00230E35 /* EHStyleManager.m in Sources */,
 				3AA2FD93171C8DCF00230E35 /* IXPickerOverlayView.m in Sources */,
-				3AA2FD96171C957700230E35 /* EHEtchView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -11,7 +11,6 @@
 #import "EHObjectSyncManager.h"
 #import "EHTask.h"
 #import "EHStyleManager.h"
-#import "EHEtchView.h"
 
 NSString * const EHTaskCellReuseIdentifier = @"EHTaskCellReuseIdentifier";
 NSString * const EHEtchReuseIdentifier = @"EHEtchReuseIdentifier";
