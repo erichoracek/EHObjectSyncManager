@@ -24,6 +24,9 @@ static EHStyleManager *singletonInstance = nil;
 {
     self = [super init];
     if (self) {
+        
+        [[UINavigationBar appearance] setTitleTextAttributes:@{ UITextAttributeTextColor : [UIColor whiteColor] , UITextAttributeTextShadowColor : [UIColor blackColor] , UITextAttributeTextShadowOffset : [NSValue valueWithCGSize:CGSizeMake(0.0, -1.0)] }];
+        
         [MSTableCell applyDefaultAppearance];
         [MSGroupedTableViewCell applyDefaultAppearance];
         
